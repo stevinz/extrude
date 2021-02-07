@@ -1,0 +1,4 @@
+/build
+/executable
+/shader_instructions.txt
+/sokol-shdc
