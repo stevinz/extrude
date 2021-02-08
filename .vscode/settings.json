@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "sokol_time.h": "c"
+        "sokol_time.h": "c",
+        "chrono": "cpp",
+        "iosfwd": "cpp",
+        "vector": "cpp"
     }
 }

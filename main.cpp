@@ -1,11 +1,13 @@
 //
-//      Created by Stephens Nunnally on 12/12/2019, (c) 2019 Scidian Software, All Rights Reserved
+// Description:     3D Extrusion
+// Author:          Stephens Nunnally and Scidian Software
+// License:         Distributed under the MIT License
+// Source(s):       https://github.com/stevinz/extrude
 //
-//  File:
+// Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
-//
-#include "libs/HandmadeMath.h"
+#include "libs/handmade_math.h"
 #include "libs/sokol/sokol_app.h"
 #include "libs/sokol/sokol_gfx.h"
 #include "libs/sokol/sokol_glue.h"
@@ -185,7 +187,7 @@ void init(void) {
         //free(path);
     }
 
-    std::string image_file = std::strcat(path, "/baboon.png");
+    std::string image_file = std::strcat(path, "/../assets/dragon.png");
     // std::cout << "full: " << image_file << std::endl << "Cube" << std::endl;
 
     sfetch_request_t (sokol_fetch_response) {

@@ -1,6 +1,17 @@
 //
-//  Single Header Library Initialization
+// Description:     3D Extrusion
+// Author:          Stephens Nunnally and Scidian Software
+// License:         Distributed under the MIT License
+// Source(s):       https://github.com/stevinz/extrude
 //
+// Copyright (c) 2021 Stephens Nunnally and Scidian Software
+//
+//
+//############################################################
+//##
+//##    Single Header Library Initialization
+//##
+//############################################################
 #if defined(_WIN32)
 #include <Windows.h>
 #endif
@@ -28,7 +39,7 @@
 //############################################################
 #define HANDMADE_MATH_IMPLEMENTATION
 #define HANDMADE_MATH_NO_SSE
-#include "libs/HandmadeMath.h"
+#include "libs/handmade_math.h"
 
 //############################################################
 //##    Stb Libraries Implementation

@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.10)
 project(Extrude)
 
 # add the executable
-add_executable(Extrude sokol.c main.cpp)
+add_executable(Extrude init.c main.cpp)
 
 
 ##################################################################
@@ -65,8 +65,8 @@ if (ExportTarget MATCHES "Mac")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit -framework Foundation")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Metal -framework MetalKit -framework AudioToolbox")
 
-    set(CMAKE_C_COMPILER "/usr/bin/gcc")
-    set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+    set(CMAKE_C_COMPILER "gcc")
+    set(CMAKE_CXX_COMPILER "g++")
 
 
 elseif (ExportTarget MATCHES "Web")
