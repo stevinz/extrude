@@ -11,6 +11,7 @@
 #define DR_MATH_H
 
 #include <cmath>
+#include "../libs/handmade_math.h"
 
 // Forward Declarations
 class DrColor;
@@ -138,8 +139,17 @@ namespace Dr {
     DrPointF    RotatePointAroundOrigin(DrPointF point, DrPointF origin, double angle, bool angle_is_in_radians = false);
 
 
-    // ***** Color Helper Functions
+    //####################################################################################
+    //##    Color Helper Functions
+    //############################
     bool        IsSameColor(const DrColor &color1, const DrColor &color2, double tolerance);
+
+
+    //####################################################################################
+    //##    Matrix Functions
+    //############################
+    hmm_m4      IdentityMatrix();
+
 
 
 }   // End namespace Dr

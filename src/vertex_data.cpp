@@ -7,6 +7,8 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
+#include "../libs/handmade_math.h"
+#include "compare.h"
 #include "types/vec2.h"
 #include "types/vec3.h"
 #include "vertex_data.h"
@@ -108,7 +110,7 @@ void DrEngineVertexData::initializeTextureCone() {
     DrVec3 point_bl(x2, y2, +c_extrude_depth);
     DrVec3 point_br(x3, y3, +c_extrude_depth);
 
-    glm::mat4 rotate = Dr::IdentityMatrix();
+    hmm_m4 rotate = Dr::IdentityMatrix();
 
     for (int i = 0; i < 4; ++i) {
         // ... If wanting to use just bottom half and rotate quarters around texture
@@ -120,7 +122,7 @@ void DrEngineVertexData::initializeTextureCone() {
         add(point_bl, n, DrVec2(tx2, ty2), Triangle_Point::Point2);
         add(point_br, n, DrVec2(tx3, ty3), Triangle_Point::Point3);
 
-        rotate = glm::rotate(rotate, Dr::DegreesToRadians(90.f), glm::vec3(0.0, 1.0, 0.0));
+        rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(Dr::DegreesToRadians(90.f), { 0.0, 1.0, 0.0 }));
 
         point_t =  rotate * point_t;
         point_bl = rotate * point_bl;
@@ -149,7 +151,7 @@ void DrEngineVertexData::initializeTextureCone() {
     p3f = DrVec3(x3, y3, +c_extrude_depth);
     p4f = DrVec3(x4, y4, +c_extrude_depth);
 
-    rotate = glm::rotate(rotate, Dr::DegreesToRadians(90.f), glm::vec3(1.0, 0.0, 0.0));
+    rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(Dr::DegreesToRadians(90.f), { 1.0, 0.0, 0.0 }));
 
     nf =    rotate * nf;
     p1f =   rotate * p1f;
@@ -202,7 +204,7 @@ void DrEngineVertexData::cube(float x1, float y1, float tx1, float ty1,
                               float x2, float y2, float tx2, float ty2,
                               float x3, float y3, float tx3, float ty3,
                               float x4, float y4, float tx4, float ty4) {
-    glm::mat4 rotate = Dr::IdentityMatrix();
+    hmm_m4 rotate = Dr::IdentityMatrix();
     DrVec3 nf, nb;                                   // Normal Front, Normal Back
     DrVec3 p1f, p2f, p3f, p4f;                       // Point 1 Front, etc
     DrVec3 p1b, p2b, p3b, p4b;                       // Point 1 Back, etc
@@ -219,10 +221,11 @@ void DrEngineVertexData::cube(float x1, float y1, float tx1, float ty1,
         p3b = DrVec3(x3, y3, -c_extrude_depth);
         p4b = DrVec3(x4, y4, -c_extrude_depth);
 
-        if (i == 1)
-            rotate = glm::rotate(rotate, Dr::DegreesToRadians(90.f), glm::vec3(0.0, 1.0, 0.0));
-        else if (i == 2)
-            rotate = glm::rotate(rotate, Dr::DegreesToRadians(90.f), glm::vec3(1.0, 0.0, 0.0));
+        if (i == 1) {
+            rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(Dr::DegreesToRadians(90.f), { 0.0, 1.0, 0.0 }));
+        } else if (i == 2) {
+            rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(Dr::DegreesToRadians(90.f), { 1.0, 0.0, 0.0 }));
+        }
 
         nf =    rotate * nf;
         p1f =   rotate * p1f;

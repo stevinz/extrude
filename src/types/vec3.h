@@ -11,6 +11,7 @@
 #define DR_VEC3_H
 
 #include <cmath>
+#include "../../libs/handmade_math.h"
 
 
 //####################################################################################
@@ -83,6 +84,7 @@ public:
     DrVec3          operator*   (const DrVec3 &v_) const;
     DrVec3          operator*   (const float d_) const;                             // Right hand side (rhs) scalar multiplication
     friend DrVec3   operator*   (const float d_, const DrVec3 &vec);                // Left  hand side (lhs) scalar multiplication
+    friend DrVec3   operator*   (const hmm_mat4 &matrix, const DrVec3 &vec);        // Left  hand side (lhs) matrix multiplication
 
     // Operators on Vector3
     DrVec3          cross       (const DrVec3 &v_) const;                           // Cross product

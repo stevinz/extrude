@@ -7,9 +7,8 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
-#include <cmath>
-
 #include "compare.h"
+#include "types/color.h"
 #include "types/pointf.h"
 
 namespace Dr {
@@ -162,6 +161,17 @@ bool IsSameColor(const DrColor &color1, const DrColor &color2, double tolerance)
              Dr::IsCloseTo(color1.greenF(), color2.greenF(), tolerance) &&
              Dr::IsCloseTo(color1.blueF(),  color2.blueF(),  tolerance) &&
              Dr::IsCloseTo(color1.alphaF(), color2.alphaF(), tolerance) );
+}
+
+
+
+//####################################################################################
+//##
+//##    Matrix Functions
+//##
+//############################
+hmm_m4 IdentityMatrix() {
+    return hmm_m4(1.0);
 }
 
 
