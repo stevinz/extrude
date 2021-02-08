@@ -9,7 +9,7 @@
 //
 #include "../libs/stb/stb_image_write.h"
 #include "compare.h"
-#include "imaging.h"
+#include "image_filters.h"
 #include "types/color.h"
 #include "types/point.h"
 #include "types/pointf.h"

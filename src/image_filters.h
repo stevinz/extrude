@@ -31,8 +31,8 @@ namespace Dr {
     // ***** Object Counting / Fill (a la Ravens Project)
     DrBitmap    BlackAndWhiteFromAlpha(const DrBitmap &bitmap, double alpha_tolerance, bool inverse);
     void        FillBorder(DrBitmap &bitmap, DrColor fill_color, DrRect rect);
-    bool        FindObjectsInBitmap(const DrBitmap &bitmap, std::vector<DrBitmap> &bitmaps, std::vector<DrRect> &rects, double alpha_tolerance,
-                                    bool convert = true);
+    bool        FindObjectsInBitmap(const DrBitmap &bitmap, std::vector<DrBitmap> &bitmaps, std::vector<DrRect> &rects, 
+                                    double alpha_tolerance, bool convert = true);
     DrBitmap    FloodFill(DrBitmap &bitmap, int at_x, int at_y, DrColor fill_color, double tolerance, Flood_Fill_Type type,
                           int &flood_pixel_count, DrRect &flood_rect);
 

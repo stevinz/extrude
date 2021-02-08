@@ -13,10 +13,8 @@
 #include <stdexcept>
 #include <utility>
 
-#include "3rd_party/polyline_simplification.h"
-#include "core/dr_debug.h"
-#include "core/interface/dr_progress.h"
-#include "core/types/dr_pointf.h"
+#include "polyline_simplification.h"
+#include "../src/types/pointf.h"
 
 
 double PerpendicularDistance(const DrPointF &pt, const DrPointF &line_start, const DrPointF &line_end) {
@@ -48,12 +46,11 @@ double PerpendicularDistance(const DrPointF &pt, const DrPointF &line_start, con
 }
 
 
-std::vector<DrPointF> PolylineSimplification::RamerDouglasPeucker(const std::vector<DrPointF> &point_list, double epsilon, IProgressBar *progress) {
+std::vector<DrPointF> PolylineSimplification::RamerDouglasPeucker(const std::vector<DrPointF> &point_list, double epsilon) {
     std::vector<DrPointF> simplified;
 
     if (point_list.size() < 2) {
-        ///throw std::invalid_argument("Not enough points to simplify");
-        Dr::PrintDebug("Error in RamerDouglasPeucker line simplification: Not enough points to simplify!");
+        throw std::invalid_argument("Not enough points to simplify");
         return point_list;
     }
 
@@ -69,11 +66,6 @@ std::vector<DrPointF> PolylineSimplification::RamerDouglasPeucker(const std::vec
         }
     }
 
-    // Allow progressbar to update
-    if (progress != nullptr) {
-        progress->updateValue(-1);
-    }
-
     // If max distance is greater than epsilon, recursively simplify
     if (dmax > epsilon) {
         // Recursive call
@@ -86,8 +78,7 @@ std::vector<DrPointF> PolylineSimplification::RamerDouglasPeucker(const std::vec
         simplified.assign(recursive_results1.begin(), recursive_results1.end() - 1);
         simplified.insert(simplified.end(), recursive_results2.begin(), recursive_results2.end());
         if (simplified.size() < 2) {
-            ///throw std::runtime_error("Problem assembling output for Polyline Simplification...");
-            Dr::PrintDebug("Error in RamerDouglasPeucker line simplification:Problem assembling output!");
+            throw std::runtime_error("Problem assembling output for Polyline Simplification...");
             return point_list;
         }
 
