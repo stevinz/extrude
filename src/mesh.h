@@ -10,8 +10,9 @@
 #ifndef ENGINE_MESH_H
 #define ENGINE_MESH_H
 
-#include "types/vec3.h"
+#include <vector>
 
+#include "types/vec3.h"
 
 
 //####################################################################################

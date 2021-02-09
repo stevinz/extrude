@@ -9,10 +9,18 @@
 //
 #include "../libs/hull_finder.h"
 #include "../libs/polyline_simplification.h"
+#include "compare.h"
 #include "image.h"
 #include "image_filters.h"
 #include "mesh.h"
 #include "vertex_data.h"
+#include "types/color.h"
+#include "types/point.h"
+#include "types/pointf.h"
+#include "types/polygonf.h"
+#include "types/rect.h"
+#include "types/rectf.h"
+
 
 // Local Constants
 const int c_neighbors =             5;                  // Number of neighbors to smooth points with

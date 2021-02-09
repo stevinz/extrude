@@ -3,8 +3,14 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name
 project(Extrude)
 
-# add the executable
-add_executable(Extrude init.c main.cpp)
+# glob the files, add the executable
+file(GLOB extrude_SRC 
+    "header_builds.c" 
+    "main.cpp"
+    "libs/*.cpp"
+    "src/*.cpp"
+    "src/types/*.cpp")
+add_executable(Extrude ${extrude_SRC})
 
 
 ##################################################################

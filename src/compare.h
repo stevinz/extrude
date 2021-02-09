@@ -151,13 +151,9 @@ namespace Dr {
     hmm_m4      IdentityMatrix();
 
 
-
 }   // End namespace Dr
 
 #endif // DR_MATH_H
-
-
-
 
 
 

@@ -15,8 +15,10 @@
 #include "mesh.h"
 
 // Forward Declarations
+class DrBitmap;
 class DrImage;
 class DrPointF;
+class DrVec2;
 class DrVec3;
 
 // Type Definitions

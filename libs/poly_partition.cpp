@@ -32,7 +32,7 @@
 #include <string.h>
 #include <vector>
 
-#include "3rd_party/poly_partition.h"
+#include "poly_partition.h"
 
 
 using namespace std;

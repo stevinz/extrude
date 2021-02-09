@@ -36,7 +36,7 @@ float roundToDecimalPlace(float number_to_round, int decimal_places) {
 //##    Loads singular vertex from Data Array
 //####################################################################################
 Vertex DrEngineVertexData::getVertex(int vertex_number) {
-    GLfloat *p = m_data.data() + (vertex_number * c_vertex_length);
+    float *p = m_data.data() + (vertex_number * c_vertex_length);
     Vertex v;
     v.position.x =          *p++;
     v.position.y =          *p++;
@@ -61,7 +61,7 @@ Vertex DrEngineVertexData::getVertex(int vertex_number) {
 //##    Sets a singular Vertex into Data Array
 //####################################################################################
 void DrEngineVertexData::setVertex(int vertex_number, Vertex v) {
-    GLfloat *p = m_data.data() + (vertex_number * c_vertex_length);
+    float *p = m_data.data() + (vertex_number * c_vertex_length);
     *p++ = v.position.x;
     *p++ = v.position.y;
     *p++ = v.position.z / 10.f;
@@ -162,9 +162,9 @@ void DrEngineVertexData::smoothVertices(float weight) {
             // When using cotan weights smoothing may be unstable, in this case we need to set t < 1
             // sometimes you even need to get as low as t < 0.5
             float t = 0.9f;
-            point.position =       ((position / total_weight) * t + point.position * (1.f - t)).toGlmVec3();
-            point.texture_coords = ((texture /  total_weight) * t + point.texture_coords * (1.f - t)).toGlmVec3();
-            point.normal =         ((normals /  total_weight) * t + point.normal * (1.f - t)).toGlmVec3();
+            point.position =       ((position / total_weight) * t + point.position * (1.f - t));
+            point.texture_coords = ((texture /  total_weight) * t + point.texture_coords * (1.f - t));
+            point.normal =         ((normals /  total_weight) * t + point.normal * (1.f - t));
         }
     }
 

@@ -14,8 +14,10 @@
 #include "../libs/hull_finder.h"
 #include "../libs/poly_partition.h"
 #include "../libs/polyline_simplification.h"
+#include "image.h"
 #include "image_filters.h"
 #include "vertex_data.h"
+#include "types/color.h"
 #include "types/point.h"
 #include "types/pointf.h"
 
@@ -316,19 +318,19 @@ void DrEngineVertexData::triangulateFace(const std::vector<DrPointF> &outline_po
     // ***** Add triangulated convex hull to vertex data
     if (type != Trianglulation::Delaunay) {
         for (auto poly : result) {
-            GLfloat x1 = static_cast<GLfloat>(         poly[0].x - w2d);
-            GLfloat y1 = static_cast<GLfloat>(height - poly[0].y - h2d);
-            GLfloat x2 = static_cast<GLfloat>(         poly[1].x - w2d);
-            GLfloat y2 = static_cast<GLfloat>(height - poly[1].y - h2d);
-            GLfloat x3 = static_cast<GLfloat>(         poly[2].x - w2d);
-            GLfloat y3 = static_cast<GLfloat>(height - poly[2].y - h2d);
+            float x1 = static_cast<float>(         poly[0].x - w2d);
+            float y1 = static_cast<float>(height - poly[0].y - h2d);
+            float x2 = static_cast<float>(         poly[1].x - w2d);
+            float y2 = static_cast<float>(height - poly[1].y - h2d);
+            float x3 = static_cast<float>(         poly[2].x - w2d);
+            float y3 = static_cast<float>(height - poly[2].y - h2d);
 
-            GLfloat tx1 = static_cast<GLfloat>(      poly[0].x / width);
-            GLfloat ty1 = static_cast<GLfloat>(1.0 - poly[0].y / height);
-            GLfloat tx2 = static_cast<GLfloat>(      poly[1].x / width);
-            GLfloat ty2 = static_cast<GLfloat>(1.0 - poly[1].y / height);
-            GLfloat tx3 = static_cast<GLfloat>(      poly[2].x / width);
-            GLfloat ty3 = static_cast<GLfloat>(1.0 - poly[2].y / height);
+            float tx1 = static_cast<float>(      poly[0].x / width);
+            float ty1 = static_cast<float>(1.0 - poly[0].y / height);
+            float tx2 = static_cast<float>(      poly[1].x / width);
+            float ty2 = static_cast<float>(1.0 - poly[1].y / height);
+            float tx3 = static_cast<float>(      poly[2].x / width);
+            float ty3 = static_cast<float>(1.0 - poly[2].y / height);
 
             triangle( x1, y1, tx1, ty1,
                       x3, y3, tx3, ty3,
@@ -427,19 +429,19 @@ void DrEngineVertexData::triangulateFace(const std::vector<DrPointF> &outline_po
             if (transparent_average > 2.49) continue;
 
             // Add triangle
-            GLfloat ix1 = static_cast<GLfloat>(         x1 - w2d);
-            GLfloat iy1 = static_cast<GLfloat>(height - y1 - h2d);
-            GLfloat ix2 = static_cast<GLfloat>(         x2 - w2d);
-            GLfloat iy2 = static_cast<GLfloat>(height - y2 - h2d);
-            GLfloat ix3 = static_cast<GLfloat>(         x3 - w2d);
-            GLfloat iy3 = static_cast<GLfloat>(height - y3 - h2d);
+            float ix1 = static_cast<float>(         x1 - w2d);
+            float iy1 = static_cast<float>(height - y1 - h2d);
+            float ix2 = static_cast<float>(         x2 - w2d);
+            float iy2 = static_cast<float>(height - y2 - h2d);
+            float ix3 = static_cast<float>(         x3 - w2d);
+            float iy3 = static_cast<float>(height - y3 - h2d);
 
-            GLfloat tx1 = static_cast<GLfloat>(      x1 / width);
-            GLfloat ty1 = static_cast<GLfloat>(1.0 - y1 / height);
-            GLfloat tx2 = static_cast<GLfloat>(      x2 / width);
-            GLfloat ty2 = static_cast<GLfloat>(1.0 - y2 / height);
-            GLfloat tx3 = static_cast<GLfloat>(      x3 / width);
-            GLfloat ty3 = static_cast<GLfloat>(1.0 - y3 / height);
+            float tx1 = static_cast<float>(      x1 / width);
+            float ty1 = static_cast<float>(1.0 - y1 / height);
+            float tx2 = static_cast<float>(      x2 / width);
+            float ty2 = static_cast<float>(1.0 - y2 / height);
+            float tx3 = static_cast<float>(      x3 / width);
+            float ty3 = static_cast<float>(1.0 - y3 / height);
 
             triangle( ix1, iy1, tx1, ty1,
                       ix2, iy2, tx2, ty2,
@@ -466,20 +468,20 @@ void DrEngineVertexData::extrudeFacePolygon(const std::vector<DrPointF> &outline
         int point2 = i;
         if (point1 >= static_cast<int>(outline_points.size())) point1 = 0;
 
-        GLfloat  x1 = static_cast<GLfloat>(         outline_points[point1].x);
-        GLfloat  y1 = static_cast<GLfloat>(height - outline_points[point1].y);
-        GLfloat tx1 = static_cast<GLfloat>(         outline_points[point1].x / width);
-        GLfloat ty1 = static_cast<GLfloat>(1.0 -    outline_points[point1].y / height);
+        float  x1 = static_cast<float>(         outline_points[point1].x);
+        float  y1 = static_cast<float>(height - outline_points[point1].y);
+        float tx1 = static_cast<float>(         outline_points[point1].x / width);
+        float ty1 = static_cast<float>(1.0 -    outline_points[point1].y / height);
 
-        GLfloat  x2 = static_cast<GLfloat>(         outline_points[point2].x);
-        GLfloat  y2 = static_cast<GLfloat>(height - outline_points[point2].y);
-        GLfloat tx2 = static_cast<GLfloat>(         outline_points[point2].x / width);
-        GLfloat ty2 = static_cast<GLfloat>(1.0 -    outline_points[point2].y / height);
+        float  x2 = static_cast<float>(         outline_points[point2].x);
+        float  y2 = static_cast<float>(height - outline_points[point2].y);
+        float tx2 = static_cast<float>(         outline_points[point2].x / width);
+        float ty2 = static_cast<float>(1.0 -    outline_points[point2].y / height);
 
-        x1 -= static_cast<GLfloat>(w2d);
-        x2 -= static_cast<GLfloat>(w2d);
-        y1 -= static_cast<GLfloat>(h2d);
-        y2 -= static_cast<GLfloat>(h2d);
+        x1 -= static_cast<float>(w2d);
+        x2 -= static_cast<float>(w2d);
+        y1 -= static_cast<float>(h2d);
+        y2 -= static_cast<float>(h2d);
 
         float pixel_w = (1.0f / width);
         float pixel_h = (1.0f / height);

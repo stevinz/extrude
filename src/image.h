@@ -13,10 +13,11 @@
 #ifndef DRIMAGE_H
 #define DRIMAGE_H
 
+#include <vector>
 #include "types/bitmap.h"
 
 // Local Constants
-#define         vec                     std::vector
+#define         vtr                     std::vector
 const double    c_alpha_tolerance =     0.875;
 
 
@@ -32,8 +33,8 @@ private:
     DrBitmap                    m_bitmap;                                                   // Stored image as DrBitmap
 
 public:
-    vec<vec<DrPointF>>          m_poly_list;                                                // Stores list of image outline points
-    vec<vec<vec<DrPointF>>>     m_hole_list;                                                // Stores list of hole  outline points
+    vtr<vtr<DrPointF>>          m_poly_list;                                                // Stores list of image outline points
+    vtr<vtr<vtr<DrPointF>>>     m_hole_list;                                                // Stores list of hole  outline points
     bool                        m_outline_canceled      { false };                          // True when Image Outline has been canceled, when true extrudes in 3D as simple square
     bool                        m_outline_processed     { false };                          // Turns true when autoOutlinePoints() has completed successfully
 
@@ -46,9 +47,8 @@ public:
     // Constructors
     DrImage(std::string image_name, DrBitmap &bitmap, bool outline);
 
-    // DrSettings Overrides
-    virtual DrType          getType() override  { return DrType::Image; }
-    virtual std::string     getName() override  { return m_simple_name; }
+    // Settings
+    std::string         getName()   { return m_simple_name; }
 
     // Image Helper Functions
     void                autoOutlinePoints();

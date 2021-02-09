@@ -164,14 +164,13 @@ bool IsSameColor(const DrColor &color1, const DrColor &color2, double tolerance)
 }
 
 
-
 //####################################################################################
 //##
 //##    Matrix Functions
 //##
 //############################
 hmm_m4 IdentityMatrix() {
-    return hmm_m4(1.0);
+    return { 1.0, 1.0, 1.0, 1.0 };
 }
 
 
