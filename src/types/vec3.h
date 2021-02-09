@@ -11,7 +11,8 @@
 #define DR_VEC3_H
 
 #include <cmath>
-#include "../../libs/handmade_math.h"
+
+#include "../3rd_party/handmade_math.h"
 
 
 //####################################################################################

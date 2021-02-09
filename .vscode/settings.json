@@ -3,7 +3,11 @@
         "sokol_time.h": "c",
         "chrono": "cpp",
         "iosfwd": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "sokol_app.h": "c",
+        "sokol_glue.h": "c",
+        "sokol_audio.h": "c",
+        "handmade_math.h": "c"
     },
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

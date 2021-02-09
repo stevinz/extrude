@@ -14,8 +14,8 @@
 #include <limits>
 
 #include "imaging.h"
-#include "vertex_data.h"
 #include "types/vec3.h"
+#include "vertex_data.h"
 
 
 //####################################################################################

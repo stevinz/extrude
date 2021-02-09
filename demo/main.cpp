@@ -7,24 +7,25 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
-#include "libs/handmade_math.h"
-#include "libs/sokol/sokol_app.h"
-#include "libs/sokol/sokol_gfx.h"
-#include "libs/sokol/sokol_glue.h"
-#include "libs/sokol/sokol_time.h"
-#include "libs/sokol/sokol_audio.h"
-#include "libs/sokol/sokol_fetch.h"
-#include "libs/stb/stb_image.h"
-#include "libs/wai/whereami.c"
-#include "loadpng-sapp.glsl.h"
+#include "../src/3rd_party/handmade_math.h"
+#include "../src/3rd_party/stb/stb_image.h"
+#include "../src/imaging.h"
+#include "../src/types/bitmap.h"
+#include "../src/types/color.h"
+#include "../src/types/image.h"
+#include "../src/types/rect.h"
 
 #include <iostream>
 
-#include "src/imaging.h"
-#include "src/types/bitmap.h"
-#include "src/types/color.h"
-#include "src/types/image.h"
-#include "src/types/rect.h"
+#include "3rd_party/sokol/sokol_app.h"
+#include "3rd_party/sokol/sokol_gfx.h"
+#include "3rd_party/sokol/sokol_glue.h"
+#include "3rd_party/sokol/sokol_time.h"
+#include "3rd_party/sokol/sokol_audio.h"
+#include "3rd_party/sokol/sokol_fetch.h"
+#include "3rd_party/wai/whereami.c"
+
+#include "shader.glsl.h"
 
 
 static struct {

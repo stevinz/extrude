@@ -7,7 +7,7 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
-#include "../libs/stb/stb_image_write.h"
+#include "3rd_party/stb/stb_image_write.h"
 #include "compare.h"
 #include "imaging.h"
 #include "types/color.h"

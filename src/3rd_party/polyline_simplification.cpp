@@ -13,8 +13,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "../types/pointf.h"
 #include "polyline_simplification.h"
-#include "../src/types/pointf.h"
 
 
 double PerpendicularDistance(const DrPointF &pt, const DrPointF &line_start, const DrPointF &line_end) {

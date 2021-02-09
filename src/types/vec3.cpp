@@ -7,7 +7,6 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
-#include "../../libs/handmade_math.h"
 #include "../compare.h"
 #include "vec3.h"
 

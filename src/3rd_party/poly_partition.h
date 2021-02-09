@@ -31,7 +31,7 @@
 #include <list>
 #include <set>
 
-#include "../src/compare.h"
+#include "../compare.h"
 
 // Type Definitions
 typedef double tppl_float;

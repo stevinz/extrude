@@ -9,9 +9,9 @@
 //
 #include <iostream>
 
-#include "../../libs/stb/stb_image.h"
-#include "../../libs/stb/stb_image_resize.h"
-#include "../../libs/stb/stb_image_write.h"
+#include "../3rd_party/stb/stb_image.h"
+#include "../3rd_party/stb/stb_image_resize.h"
+#include "../3rd_party/stb/stb_image_write.h"
 #include "bitmap.h"
 #include "color.h"
 #include "pointf.h"

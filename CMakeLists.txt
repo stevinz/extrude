@@ -5,11 +5,14 @@ project(Extrude)
 
 # glob the files, add the executable
 file(GLOB extrude_SRC 
-    "header_builds.c" 
-    "main.cpp"
-    "libs/*.cpp"
-    "src/*.cpp"
-    "src/types/*.cpp")
+    "demo/*.c**"
+    "demo/3rd_party/*.c**"
+    "demo/3rd_party/sokol/*.c**"
+    "demo/3rd_party/whereami/*.c**"
+    "src/*.c**"
+    "src/3rd_party/*.c**"
+    "src/types/*.c**"
+)
 add_executable(Extrude ${extrude_SRC})
 
 

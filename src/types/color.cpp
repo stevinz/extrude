@@ -9,9 +9,9 @@
 //
 #include <iomanip>
 
-#include "color.h"
 #include "../compare.h"
 #include "../string.h"
+#include "color.h"
 
 
 inline constexpr unsigned char operator "" _uc( unsigned long long arg ) noexcept {

@@ -7,9 +7,7 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
-#include "../../libs/hull_finder.h"
-#include "../../libs/polyline_simplification.h"
-
+#include "../3rd_party/polyline_simplification.h"
 #include "../compare.h"
 #include "../imaging.h"
 #include "../mesh.h"
@@ -51,7 +49,7 @@ DrImage::DrImage(std::string image_name, DrBitmap &bitmap, bool outline) {
 void DrImage::setSimpleBox() {
     std::vector<DrPointF> one_poly = m_bitmap.polygon().points();
     std::vector<std::vector<DrPointF>> hole_list {{ }};
-    HullFinder::EnsureWindingOrientation(one_poly, Winding_Orientation::CounterClockwise);
+    DrPolygonF::ensureWindingOrientation(one_poly, Winding_Orientation::CounterClockwise);
     m_poly_list.clear();
     m_hole_list.clear();
     m_poly_list.push_back(one_poly);
@@ -122,7 +120,7 @@ void DrImage::autoOutlinePoints() {
         }
 
         // Check winding
-        HullFinder::EnsureWindingOrientation(one_poly, Winding_Orientation::CounterClockwise);
+        DrPolygonF::ensureWindingOrientation(one_poly, Winding_Orientation::CounterClockwise);
 
         // Add polygon to list of polygons in shape
         m_poly_list.push_back(one_poly);
@@ -163,7 +161,7 @@ void DrImage::autoOutlinePoints() {
             }
 
             if (one_hole.size() > 3) {
-                HullFinder::EnsureWindingOrientation(one_hole, Winding_Orientation::Clockwise);
+                DrPolygonF::ensureWindingOrientation(one_hole, Winding_Orientation::Clockwise);
                 hole_list.push_back(one_hole);
             }
         }

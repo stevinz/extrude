@@ -62,6 +62,32 @@ Winding_Orientation DrPolygonF::orientation(DrPointF p, DrPointF q, DrPointF r) 
     return ((value > 0) ? Winding_Orientation::Clockwise: Winding_Orientation::CounterClockwise);   // Clock-wise or Counterclock-wise
 }
 
+// Makes sure points are in the desired Winding Orientation
+void DrPolygonF::ensureWindingOrientation(std::vector<DrPointF> &points, Winding_Orientation direction_desired) {
+    Winding_Orientation winding = findWindingOrientation(points);
+    if ((winding == Winding_Orientation::Clockwise        && direction_desired == Winding_Orientation::CounterClockwise) ||
+        (winding == Winding_Orientation::CounterClockwise && direction_desired == Winding_Orientation::Clockwise))
+    {
+        std::reverse(points.begin(), points.end());
+    }
+}
+
+// Returns winding direction of points
+Winding_Orientation DrPolygonF::findWindingOrientation(const std::vector<DrPointF> &points) {
+    size_t i1, i2;
+    double area = 0;
+    for (i1 = 0; i1 < points.size(); i1++) {
+        i2 = i1 + 1;
+        if (i2 == points.size()) i2 = 0;
+        area += points[i1].x * points[i2].y - points[i1].y * points[i2].x;
+    }
+    if (area > 0) return Winding_Orientation::CounterClockwise;
+    if (area < 0) return Winding_Orientation::Clockwise;
+    return Winding_Orientation::LineSegment;
+}
+
+
+
 // RETURNS true if line segment 'p1q1' and 'p2q2' intersect
 bool DrPolygonF::doIntersect(DrPointF p1, DrPointF q1, DrPointF p2, DrPointF q2) {
     // Find the four orientations needed for general and special cases
