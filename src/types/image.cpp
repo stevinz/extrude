@@ -7,19 +7,21 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
-#include "../libs/hull_finder.h"
-#include "../libs/polyline_simplification.h"
-#include "compare.h"
+#include "../../libs/hull_finder.h"
+#include "../../libs/polyline_simplification.h"
+
+#include "../compare.h"
+#include "../imaging.h"
+#include "../mesh.h"
+#include "../vertex_data.h"
+
+#include "color.h"
 #include "image.h"
-#include "image_filters.h"
-#include "mesh.h"
-#include "vertex_data.h"
-#include "types/color.h"
-#include "types/point.h"
-#include "types/pointf.h"
-#include "types/polygonf.h"
-#include "types/rect.h"
-#include "types/rectf.h"
+#include "point.h"
+#include "pointf.h"
+#include "polygonf.h"
+#include "rect.h"
+#include "rectf.h"
 
 
 // Local Constants

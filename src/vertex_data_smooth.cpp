@@ -13,7 +13,7 @@
 //
 #include <limits>
 
-#include "image_filters.h"
+#include "imaging.h"
 #include "vertex_data.h"
 #include "types/vec3.h"
 

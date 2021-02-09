@@ -96,6 +96,12 @@ void DrColor::setBlueF(double blue)     { b = Dr::Clamp(static_cast<unsigned cha
 void DrColor::setAlpha(int alpha)       { a = Dr::Clamp(static_cast<unsigned char>(alpha),          0_uc, 255_uc); }
 void DrColor::setAlphaF(double alpha)   { a = Dr::Clamp(static_cast<unsigned char>(alpha * 255.0),  0_uc, 255_uc); }
 
+void DrColor::setRgbF(double red, double green, double blue, double alpha) {
+    r = Dr::Clamp(static_cast<unsigned char>(red * 255.0),      0_uc, 255_uc);
+    g = Dr::Clamp(static_cast<unsigned char>(green * 255.0),    0_uc, 255_uc); 
+    b = Dr::Clamp(static_cast<unsigned char>(blue * 255.0),     0_uc, 255_uc); 
+    a = Dr::Clamp(static_cast<unsigned char>(alpha * 255.0),    0_uc, 255_uc); 
+}
 
 //####################################################################################
 //##    Color Editing
@@ -193,7 +199,100 @@ bool DrColor::operator!=(const DrColor &other) const {
 
 
 
+//####################################################################################
+//##    Rgb / Hsv Conversion Functions
+//##
+//##    Source:
+//##        http://web.mit.edu/GRAPHICS/src/tilemkrs/tile.c
+//##        "fractile 1.1, placed in public domain by Steve Kirkendall, 8 April 1996"
+//##
+//####################################################################################
+DrHsv DrColor::getHsv() {
+	DrHsv	hsv;	                                                /* the resulting HSV value */
+	double	rd, gd, bd;                                             /* the RGB components, in range 0.0 - 1.0 */
+	double	max, min;                                               /* extremes from r, g, b */
+	double	delta;	                                                /* difference between max and min */
 
+	/* extract the RGB components from rgb */
+	rd = redF();
+	gd = greenF();
+	bd = blueF();
+
+	/* find max and min */
+	if (rd > gd) {
+		max = (bd > rd) ? bd : rd;
+		min = (gd > bd) ? bd : gd;
+    } else {
+		max = (bd > gd) ? bd : gd;
+		min = (rd > bd) ? bd : rd;
+	}
+
+	hsv.value = max;                                                /* compute "value" */
+	hsv.saturation = (max > 0.0) ? (max - min) / max : 0;           /* compute "saturation" */
+
+	/* compute "hue".  This is the hard one */
+	delta = max - min;
+	if (delta <= 0.001) {
+		hsv.hue = 0.0;                                              /* gray - any hue will work */
+	} else {
+		/* divide hexagonal color wheel into three sectors */
+		if (max == rd)
+			hsv.hue = (gd - bd) / delta;                            /* color is between yellow and magenta */
+		else if (max == gd)
+			hsv.hue = 2.0 + (bd - rd) / delta;                      /* color is between cyan and yellow */
+		else /* max == b */
+			hsv.hue = 4.0 + (rd - gd) / delta;                      /* color is between magenta and cyan */
+		
+		hsv.hue *= 60.0;                                            /* convert hue to degrees */
+
+		/* make sure hue is not negative */
+		if (hsv.hue < 0.0) hsv.hue += 360.0;
+	}
+	
+	return hsv;
+}
+
+void DrColor::setFromHsv(DrHsv hsv) {
+	DrRgb	rgb;	    /* the new rgb value */
+	double	h;	        /* copy of the "hsv.hue" */
+	double	i, f;	    /* integer and fractional parts of "h" */
+	int	    p, q, t;    /* permuted RGB values, in integer form */
+	int	    v;	        /* "hsv.value", in integer form */
+
+	if (hsv.saturation < 0.01) {
+		/* simple gray conversion */
+		rgb.red = rgb.green = rgb.blue = (int)(hsv.value * 256.0);
+	} else {
+		/* convert hue to range [0,6) */
+		h = hsv.hue / 60.0;
+		if (h >= 6.0)
+			h -= 6.0;
+
+		/* break "h" down into integer and fractional parts. */
+		i = floor(h);
+		f = h - i;
+
+		/* compute the permuted RGB values */
+		v = (int)(hsv.value * 256);
+		p = (int)((hsv.value * (1.0 - hsv.saturation)) * 256.0);
+		q = (int)((hsv.value * (1.0 - (hsv.saturation * f))) * 256.0);
+		t = (int)((hsv.value * (1.0 - (hsv.saturation * (1.0 - f)))) * 256.0);
+
+		/* map v, p, q, and t into red, green, and blue values */
+		switch ((int)i) {
+		  case 0:   rgb.red = v, rgb.green = t, rgb.blue = p;	break;
+		  case 1:   rgb.red = q, rgb.green = v, rgb.blue = p;	break;
+		  case 2:   rgb.red = p, rgb.green = v, rgb.blue = t;	break;
+		  case 3:   rgb.red = p, rgb.green = q, rgb.blue = v;	break;
+		  case 4:   rgb.red = t, rgb.green = p, rgb.blue = v;	break;
+		  case 5:   rgb.red = v, rgb.green = p, rgb.blue = q;	break;
+		}
+	}
+
+	setRed(rgb.red);
+    setGreen(rgb.green);
+    setBlue(rgb.blue);
+}
 
 
 

@@ -13,6 +13,18 @@
 #include "types/bitmap.h"
 #include "types/pointf.h"
 
+
+// Filters types
+enum class Image_Filter_Type {              // ApplySinglePixelFilter 'value' argument
+    Brightness,                             //      -255 to 255
+    Contrast,                               //      -255 to 255
+    Saturation,                             //      -255 to 255 
+    Hue,                                    //      -360 to 360
+    Grayscale,                              //          N/A
+    Negative,                               //          N/A
+    Opacity,                                //      -255 to 255
+};
+
 // Imaging Enumerations
 enum class Flood_Fill_Type {
     Compare_4,
@@ -24,6 +36,9 @@ enum class Flood_Fill_Type {
 //##    Image editing / object finding
 //############################
 namespace Dr {
+
+    // ***** Filters
+    DrBitmap    ApplySinglePixelFilter(Image_Filter_Type filter, const DrBitmap &from_bitmap, int value);
 
     // ***** Comparison
     bool        CompareBitmaps(const DrBitmap &bitmap1, const DrBitmap &bitmap2);

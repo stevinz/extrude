@@ -20,6 +20,13 @@
 
 #include <iostream>
 
+#include "src/imaging.h"
+#include "src/types/bitmap.h"
+#include "src/types/color.h"
+#include "src/types/image.h"
+#include "src/types/rect.h"
+
+
 static struct {
     float rx, ry;
     sg_pass_action pass_action;
@@ -215,16 +222,25 @@ static void fetch_callback(const sfetch_response_t* response) {
             &png_width, &png_height,
             &num_channels, desired_channels);
         if (pixels) {
+
+
+            DrBitmap bitmap = DrBitmap(pixels, static_cast<int>(png_width * png_height * 4), false, png_width, png_height);
+            bitmap = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, bitmap, 120);
+
+            DrImage *dr_image = new DrImage("dragon", bitmap);
+
+
+
             /* ok, time to actually initialize the sokol-gfx texture */
             sg_image_desc (sokol_image) {
-                .width = png_width,
-                .height = png_height,
+                .width =  dr_image->getBitmap().width,
+                .height = dr_image->getBitmap().height,
                 .pixel_format = SG_PIXELFORMAT_RGBA8,
                 .min_filter = SG_FILTER_LINEAR,
                 .mag_filter = SG_FILTER_LINEAR,
                 .content.subimage[0][0] = {
-                    .ptr = pixels,
-                    .size = png_width * png_height * 4,
+                    .ptr =  &(dr_image->getBitmap().data[0]),
+                    .size = dr_image->getBitmap().size(),
                 }
             };
             sg_init_image(state.bind.fs_images[SLOT_tex], &sokol_image);

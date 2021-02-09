@@ -46,6 +46,9 @@ public:
     DrBitmap(const unsigned char *from_data, const int &number_of_bytes,
              bool compressed = true, int width_ = 0, int height_ = 0);
 
+    // Info
+    int         size() const { return (width * height * channels); }
+
     // Manipulation
     DrBitmap    copy();
     DrBitmap    copy(DrRect &copy_rect);

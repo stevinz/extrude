@@ -14,10 +14,10 @@
 #include "../libs/hull_finder.h"
 #include "../libs/poly_partition.h"
 #include "../libs/polyline_simplification.h"
-#include "image.h"
-#include "image_filters.h"
+#include "imaging.h"
 #include "vertex_data.h"
 #include "types/color.h"
+#include "types/image.h"
 #include "types/point.h"
 #include "types/pointf.h"
 

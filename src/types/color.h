@@ -43,9 +43,15 @@ namespace Dr {
 //##    Struct for Hue, Saturation, Value
 //############################
 struct DrHsv {
-    int hue =           0;     // 0 to 36000
-    int saturation =    0;     // 0 to 255
-    int value =         0;     // 0 to 255
+    double hue =            0;      // 0.0 to 360.0
+    double saturation =     0;      // 0.0 to   1.0
+    double value =          0;      // 0.0 to   1.0
+};
+
+struct DrRgb {
+    int red =               0;      // 0 to 255
+    int green =             0;      // 0 to 255
+    int blue =              0;      // 0 to 255
 };
 
 
@@ -99,6 +105,9 @@ public:
     void        setAlpha(int alpha);
     void        setAlphaF(double alpha);
 
+    void        setRgbF(double r, double g, double b, double a);
+
+
     // Operator Overloads
     DrColor&    operator=   (const DrColor &other);
     DrColor     operator+   (const DrColor &other) const;
@@ -107,6 +116,11 @@ public:
     DrColor     operator/   (int k) const;
     bool        operator==  (const DrColor &other) const;
     bool        operator!=  (const DrColor &other) const;
+
+
+    // Hsv 
+    DrHsv       getHsv();
+    void        setFromHsv(DrHsv hsv);
 
 };
 

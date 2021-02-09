@@ -14,7 +14,10 @@
 #define DRIMAGE_H
 
 #include <vector>
-#include "types/bitmap.h"
+
+#include "bitmap.h"
+#include "pointf.h"
+
 
 // Local Constants
 #define         vtr                     std::vector
@@ -45,7 +48,7 @@ private:
 
 public:
     // Constructors
-    DrImage(std::string image_name, DrBitmap &bitmap, bool outline);
+    DrImage(std::string image_name, DrBitmap &bitmap, bool outline = true);
 
     // Settings
     std::string         getName()   { return m_simple_name; }
