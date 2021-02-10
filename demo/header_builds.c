@@ -20,12 +20,16 @@
 //############################################################
 //##    Sokol Libraries... ADJUST GRAPHICS PLATFORM HERE!!
 //############################################################
-//#define SOKOL_GLES2               // Android, WebAssembly
-//#define SOKOL_GLES3               // Android, WebAssembly
-//#define SOKOL_WGPU                // Next Gen WebAssembly
-//#define SOKOL_D3D11               // Windows, XBox
-//#define SOKOL_METAL               // MacOS, iOS, tvOS
-#define SOKOL_GLCORE33            // MacOS, Windows, Linux, Switch, Playstation
+#if defined(__EMSCRIPTEN__)
+    #define SOKOL_GLES2               // Android, WebAssembly
+    //#define SOKOL_GLES3               // Android, WebAssembly
+    //#define SOKOL_WGPU                // Next Gen WebAssembly
+#elif defined(__APPLE__)
+    #define SOKOL_GLCORE33            // MacOS, Windows, Linux, Switch, Playstation
+    //#define SOKOL_METAL               // MacOS, iOS, tvOS
+#elif defined(_WIN32)
+    #define SOKOL_D3D11               // Windows, XBox
+#endif
 
 #include "3rd_party/sokol/sokol_app.h"
 #include "3rd_party/sokol/sokol_gfx.h"

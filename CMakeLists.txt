@@ -1,3 +1,17 @@
+##################################################################
+#
+#   To compile, set target manually below:
+#
+#       "Mac"   MacOS
+#       "Web"   Emscripten
+#       "Win"   Windows
+#       "Lin"   Linux
+#
+##################################################################
+
+set(ExportTarget "Web")
+
+##################################################################
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name
@@ -14,17 +28,6 @@ file(GLOB extrude_SRC
     "src/types/*.c**"
 )
 add_executable(Extrude ${extrude_SRC})
-
-
-##################################################################
-#
-#   Set Target Manually:
-#
-#       "Mac"   MacOS
-#       "Web"   Emscripten
-#
-##################################################################
-set(ExportTarget "Mac")
 
 
 ##################################################################
@@ -46,6 +49,13 @@ set(ExportTarget "Mac")
 ##################################################################
 #if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 if (ExportTarget MATCHES "Mac")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -xobjective-c -fobjc-arc")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fobjc-arc")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit -framework Foundation")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Metal -framework MetalKit -framework AudioToolbox")
+    set(CMAKE_C_COMPILER "gcc")
+    set(CMAKE_CXX_COMPILER "g++")
+
     find_library(COCOA_LIBRARY Cocoa REQUIRED)
     find_library(IOKIT_LIBRARY IOKit REQUIRED)
     find_library(OPENGL_LIBRARY OpenGL REQUIRED)
@@ -68,20 +78,28 @@ if (ExportTarget MATCHES "Mac")
     target_link_libraries(Extrude ${METALKIT_LIBRARY})
     target_link_libraries(Extrude ${AUDIOKIT_LIBRARY})
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -xobjective-c -fobjc-arc")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fobjc-arc")
-
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit -framework Foundation")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Metal -framework MetalKit -framework AudioToolbox")
-
-    set(CMAKE_C_COMPILER "gcc")
-    set(CMAKE_CXX_COMPILER "g++")
-
-
 elseif (ExportTarget MATCHES "Web")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 --shell-file ../shell.html")
     set(CMAKE_C_COMPILER "emcc")
     set(CMAKE_CXX_COMPILER "emcc")
+    SET(CMAKE_EXECUTABLE_SUFFIX ".html")
+
+    set_target_properties(Extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind") # --preload-file assets/shapes.png")
+
+    # -s WASM=0                         force javascript or
+    # -s WASM=1                         use webassembly
+    # --shell-file <path>               create a html file without emscripten logo and debug shell
+
+elseif (ExportTarget MATCHES "Win")
+
+    ### TODO ###
+
+elseif (ExportTarget MATCHES "Linux")
+
+    ### TODO ###
 
 endif()
+
+
 
 
