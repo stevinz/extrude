@@ -58,6 +58,9 @@ public:
     DrColor     getPixel(int x, int y) const;
     void        setPixel(int x, int y, DrColor color);
 
+    // Alpha Testing
+    void    fuzzyAlpha();
+
     // Image Loaders
     void    loadFromFile(std::string filename);
     void    loadFromMemory(const unsigned char *compressed_data, const int &number_of_bytes,

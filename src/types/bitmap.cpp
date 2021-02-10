@@ -120,6 +120,26 @@ void DrBitmap::setPixel(int x, int y, DrColor color) {
 
 
 //####################################################################################
+//##    Testing Alpha
+//####################################################################################
+void DrBitmap::fuzzyAlpha() {
+    for (int x = 0; x < width; ++x) {
+        for (int y = 0; y < height; ++y) {
+            DrColor color = getPixel(x, y);
+            if (color.red() <  10 && color.green() <  10 && color.blue() <  10) {
+                color.setAlpha(0);
+                setPixel(x, y, color);
+            }
+            if (color.red() > 245 && color.green() > 245 && color.blue() < 245) {
+                color.setAlpha(0);
+                setPixel(x, y, color);
+            }
+        }
+    }
+}
+
+
+//####################################################################################
 //##    Loading Images
 //####################################################################################
 void DrBitmap::loadFromFile(std::string filename) {

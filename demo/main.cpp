@@ -79,16 +79,66 @@ bool initialized_image = false;
 
 
 //################################################################################
+//##    Blend Functions
+//################################################################################
+// Normal
+sg_blend_state (sokol_blend_normal) {
+    .enabled =              true,
+    .src_factor_rgb =       SG_BLENDFACTOR_ONE,
+    .dst_factor_rgb =       SG_BLENDFACTOR_ZERO,
+    .op_rgb =               SG_BLENDOP_ADD,
+    .src_factor_alpha =     SG_BLENDFACTOR_ONE,
+    .dst_factor_alpha =     SG_BLENDFACTOR_ZERO,
+    .op_alpha =             SG_BLENDOP_ADD,
+    .color_write_mask =     SG_COLORMASK_RGBA
+};
+// Alpha Enabled
+sg_blend_state (sokol_blend_alpha) {
+    .enabled =              true,
+    .src_factor_rgb =       SG_BLENDFACTOR_SRC_ALPHA,
+    .dst_factor_rgb =       SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+    .op_rgb =               SG_BLENDOP_ADD,
+    .src_factor_alpha =     SG_BLENDFACTOR_SRC_ALPHA,
+    .dst_factor_alpha =     SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+    .op_alpha =             SG_BLENDOP_ADD,
+    .color_write_mask =     SG_COLORMASK_RGBA
+};
+
+///glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);        // Premultiplied alpha blend
+// typedef enum sg_blend_factor {
+//     _SG_BLENDFACTOR_DEFAULT,    /* value 0 reserved for default-init */
+//     SG_BLENDFACTOR_ZERO,
+//     SG_BLENDFACTOR_ONE,
+//     SG_BLENDFACTOR_SRC_COLOR,
+//     SG_BLENDFACTOR_ONE_MINUS_SRC_COLOR,
+//     SG_BLENDFACTOR_SRC_ALPHA,
+//     SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+//     SG_BLENDFACTOR_DST_COLOR,
+//     SG_BLENDFACTOR_ONE_MINUS_DST_COLOR,
+//     SG_BLENDFACTOR_DST_ALPHA,
+//     SG_BLENDFACTOR_ONE_MINUS_DST_ALPHA,
+//     SG_BLENDFACTOR_SRC_ALPHA_SATURATED,
+//     SG_BLENDFACTOR_BLEND_COLOR,
+//     SG_BLENDFACTOR_ONE_MINUS_BLEND_COLOR,
+//     SG_BLENDFACTOR_BLEND_ALPHA,
+//     SG_BLENDFACTOR_ONE_MINUS_BLEND_ALPHA,
+//     _SG_BLENDFACTOR_NUM,
+//     _SG_BLENDFACTOR_FORCE_U32 = 0x7FFFFFFF
+// } sg_blend_factor;
+
+
+
+//################################################################################
 //##    Initialize
 //################################################################################
 void init(void) {
-    // ***** Setup sokol-gfx
+    // ***** Setup sokol-gfx, call sokol_glue function to obtain values from sokol_app
     sg_desc (sokol_gfx) {
         .context = sapp_sgcontext()
     };            
     sg_setup(&sokol_gfx);
 
-    // ***** Setup sokol-fetch with the minimal "resource limits"
+    // ***** Setup sokol-fetch (for loading files) with the minimal "resource limits"
     #if !defined(__EMSCRIPTEN__)
         sfetch_desc_t (sokol_fetch) {
             .max_requests = 1,
@@ -98,27 +148,14 @@ void init(void) {
         sfetch_setup(&sokol_fetch);
     #endif
     
-
     // ***** Pass action for clearing the framebuffer to some color
-    // sg_pass_action pass_action;
-    //                pass_action.colors[0].action = SG_ACTION_CLEAR;
-    //                pass_action.colors[0].val[0] = 0.1f; 
-    //                pass_action.colors[0].val[1] = 0.1f;
-    //                pass_action.colors[0].val[2] = 0.1f;
-    //                pass_action.colors[0].val[3] = 1.0f;
-
     sg_pass_action (pass_action) {
         .colors[0] = { .action = SG_ACTION_CLEAR, .val = { 0.125f, 0.25f, 0.35f, 1.0f } }
     };
     state.pass_action = (pass_action);
 
-    /* ***** Allocate an image handle, but don't actually initialize the image yet,
-       this happens later when the asynchronous file load has finished.
-       Any draw calls containing such an "incomplete" image handle
-       will be silently dropped. */
-    state.bind.fs_images[SLOT_tex] = sg_alloc_image();
 
-    /* cube vertex buffer with packed texcoords */
+    // ***** Cube vertex buffer with packed texcoords
     const vertex_t vertices[] = {
         /* pos                  uvs */
         { -1.0f, -1.0f, -1.0f,      0,     0 },
@@ -158,7 +195,8 @@ void init(void) {
     };
     state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
 
-    /* create an index buffer for the cube */
+
+    // ***** Create an index buffer for the cube
     const uint16_t indices[] = {
          0,  1,  2,   0,  2,  3,
          6,  5,  4,   7,  6,  4,
@@ -175,7 +213,8 @@ void init(void) {
     };
     state.bind.index_buffer = sg_make_buffer(&sokol_buffer_index);
 
-    /* a pipeline state object */
+
+    // ***** Pipeline State Object, sets 3D device parameters
     sg_pipeline_desc (sokol_pipleine) {
         .shader = sg_make_shader(extrude3D_shader_desc()),
         .layout = {
@@ -192,18 +231,20 @@ void init(void) {
         .rasterizer = {
             .cull_mode = SG_CULLMODE_BACK,
         },
-        .label = "cube-pipeline"
+        .label = "cube-pipeline",
+        .blend = sokol_blend_alpha
     };
     state.pip = sg_make_pipeline(&sokol_pipleine);
 
 
+    // ***** Allocate an image handle, 
+    //  but don't actually initialize the image yet, this happens later when the asynchronous file load has finished.
+    //  Any draw calls containing such an "incomplete" image handle will be silently dropped.
+    state.bind.fs_images[SLOT_tex] = sg_alloc_image();
 
-    /* start loading the PNG file, we don't need the returned handle since
-       we can also get that inside the fetch-callback from the response
-       structure.
-        - NOTE that we're not using the user_data member, since all required
-          state is in a global variable anyway
-    */
+    // ***** Start loading the PNG File
+    //  We don't need the returned handle since we can also get that inside the fetch-callback from the response
+    //  structure. NOTE: we're not using the user_data member, since all required state is in a global variable anyway
     char* path = NULL;
     int length, dirname_length;
     std::string image_file = "";
@@ -249,7 +290,8 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
     if (pixels) {
 
         DrBitmap bitmap = DrBitmap(pixels, static_cast<int>(png_width * png_height * 4), false, png_width, png_height);
-        bitmap = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, bitmap, Dr::RandomInt(-100, 100));
+        //bitmap.forceAlpha();
+        //bitmap = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, bitmap, Dr::RandomInt(-100, 100));
         DrImage *dr_image = new DrImage("shapes", bitmap);
 
         // Initialze the sokol-gfx texture

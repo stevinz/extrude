@@ -3,6 +3,8 @@
 //################################################################################
 @ctype mat4 hmm_mat4
 
+
+//########## Vertex Shader ##########
 @vs vs
 uniform vs_params {
     mat4 mvp;
@@ -18,6 +20,8 @@ void main() {
 }
 @end
 
+
+//########## Fragment Shader ##########
 @fs fs
 uniform sampler2D tex;
 
@@ -29,6 +33,8 @@ void main() {
 }
 @end
 
+
+//########## Shader Name ##########
 @program extrude3D vs fs
 
 

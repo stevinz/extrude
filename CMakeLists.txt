@@ -2,14 +2,14 @@
 #
 #   To compile, set target manually below:
 #
-#       "Mac"   MacOS
-#       "Web"   Emscripten
-#       "Win"   Windows
-#       "Lin"   Linux
+#       "mac"   MacOS
+#       "web"   Emscripten
+#       "win"   Windows
+#       "lin"   Linux
 #
 ##################################################################
 
-set(ExportTarget "Web")
+set(ExportTarget "mac")
 
 ##################################################################
 cmake_minimum_required(VERSION 3.10)
@@ -55,7 +55,7 @@ endif()
 # - emscripten:             WebAudio with ScriptProcessorNode
 # - Android:                OpenSLES (link with OpenSLES)
 ##################################################################
-if (ExportTarget MATCHES "Mac")
+if (ExportTarget MATCHES "mac")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -xobjective-c -fobjc-arc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fobjc-arc")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit -framework Foundation")
@@ -85,7 +85,7 @@ if (ExportTarget MATCHES "Mac")
     target_link_libraries(Extrude ${METALKIT_LIBRARY})
     target_link_libraries(Extrude ${AUDIOKIT_LIBRARY})
 
-elseif (ExportTarget MATCHES "Web")
+elseif (ExportTarget MATCHES "web")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 --shell-file ../shell.html")
     set(CMAKE_C_COMPILER "emcc")
     set(CMAKE_CXX_COMPILER "emcc")
@@ -97,11 +97,11 @@ elseif (ExportTarget MATCHES "Web")
     # -s WASM=1                         use webassembly
     # --shell-file <path>               create a html file without emscripten logo and debug shell
 
-elseif (ExportTarget MATCHES "Win")
+elseif (ExportTarget MATCHES "win")
 
     ### TODO ###
 
-elseif (ExportTarget MATCHES "Linux")
+elseif (ExportTarget MATCHES "lin")
 
     ### TODO ###
 
