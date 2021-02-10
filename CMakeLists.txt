@@ -30,6 +30,14 @@ file(GLOB extrude_SRC
 add_executable(Extrude ${extrude_SRC})
 
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    execute_process (
+       COMMAND ./sokol-shdc -i shader.glsl -o demo/shader.glsl.h -l glsl330:glsl100:metal_macos
+       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
+
 ##################################################################
 # Sokol Gfx Requires Libraries:
 # - on macOS with Metal:    Cocoa, IOKit, QuartzCore, Metal, MetalKit, Foundation
@@ -47,7 +55,6 @@ add_executable(Extrude ${extrude_SRC})
 # - emscripten:             WebAudio with ScriptProcessorNode
 # - Android:                OpenSLES (link with OpenSLES)
 ##################################################################
-#if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 if (ExportTarget MATCHES "Mac")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -xobjective-c -fobjc-arc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fobjc-arc")

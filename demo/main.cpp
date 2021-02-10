@@ -177,7 +177,7 @@ void init(void) {
 
     /* a pipeline state object */
     sg_pipeline_desc (sokol_pipleine) {
-        .shader = sg_make_shader(loadpng_shader_desc()),
+        .shader = sg_make_shader(extrude3D_shader_desc()),
         .layout = {
             .attrs = {
                 [ATTR_vs_pos].format = SG_VERTEXFORMAT_FLOAT3,
