@@ -94,8 +94,9 @@ elseif (ExportTarget MATCHES "web")
     # Copy 'assets' directory to 'build' directory
     add_custom_command(TARGET Extrude PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/ $<TARGET_FILE_DIR:Extrude>/assets/)
 
-    #set_target_properties(Extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --preload-file assets/shapes.png")
-    set_target_properties(Extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --embed-file assets/shapes.png")
+    #set_target_properties(Extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --preload-file assets/shapes.png --preload-file shapes.png")
+    #set_target_properties(Extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --embed-file assets/shapes.png --embed-file shapes.png")
+    set_target_properties(Extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind")
 
     # -s WASM=0                         force javascript or
     # -s WASM=1                         use webassembly

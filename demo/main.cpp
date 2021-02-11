@@ -102,15 +102,13 @@ void init(void) {
     sg_setup(&sokol_gfx);
 
     // ***** Setup sokol-fetch (for loading files) with the minimal "resource limits"
-    //#if !defined(__EMSCRIPTEN__)
-        sfetch_desc_t (sokol_fetch) {
-            .max_requests = 4,
-            .num_channels = 4,
-            .num_lanes = 1
-        };
-        sfetch_setup(&sokol_fetch);
-    //#endif
-    
+    sfetch_desc_t (sokol_fetch) {
+        .max_requests = 4,
+        .num_channels = 2,
+        .num_lanes = 1
+    };
+    sfetch_setup(&sokol_fetch);
+        
     // ***** Pass action for clearing the framebuffer to some color
     sg_pass_action (pass_action) {
         .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.125f, 0.25f, 0.35f, 1.0f } }
@@ -224,8 +222,11 @@ void init(void) {
         image_file = std::strcat(path, "/../assets/shapes.png");
         // std::cout << "full: " << image_file << std::endl << "Cube" << std::endl;
     #else        
-        image_file = "assets/shapes.png";
-        //image_file = "github.com/stevinz/extrude/blob/master/assets/shapes.png?raw=true";
+        // ********** NOTE: About loading images with Emscripten **********
+        //  When running html on local machine, must disable CORS in broswer
+        //  On Safari, with 'Develop' menu enabled select "Disable Cross-Origin Restrictions"
+        image_file = "http://github.com/stevinz/extrude/blob/master/assets/shapes.png?raw=true";
+        //image_file = "shapes.png";
     #endif
 
     sfetch_request_t (sokol_fetch_response) {
@@ -390,12 +391,10 @@ static void input(const sapp_event* ev) {
    frame to pump the sokol-fetch message queues.
 */
 static void frame(void) {
-    /* pump the sokol-fetch message queues, and invoke response callbacks */
-    //#if !defined(__EMSCRIPTEN__)
-        sfetch_dowork();
-    //#endif
+    // ***** Pump the sokol-fetch message queues, and invoke response callbacks
+    sfetch_dowork();
 
-    /* compute model-view-projection matrix for vertex shader */
+    // ***** Compute model-view-projection matrix for vertex shader
     hmm_mat4 proj = HMM_Perspective(60.0f, (float)sapp_width()/(float)sapp_height(), 0.01f, 10.0f);
     hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, 6.0f), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
     hmm_mat4 view_proj = HMM_MultiplyMat4(proj, view);
@@ -407,6 +406,7 @@ static void frame(void) {
     hmm_mat4 model = HMM_MultiplyMat4(rxm, rym);
     vs_params.mvp = HMM_MultiplyMat4(view_proj, model);
 
+    // ***** Render pass
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
     sg_apply_pipeline(state.pip);
     sg_apply_bindings(&state.bind);
@@ -423,9 +423,7 @@ static void frame(void) {
 //##    Clean Up
 //################################################################################
 void cleanup(void) {
-    //#if !defined(__EMSCRIPTEN__)
-        sfetch_shutdown();
-    //#endif
+    sfetch_shutdown();
     sg_shutdown();
 }
 
