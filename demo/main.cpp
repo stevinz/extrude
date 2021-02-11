@@ -224,8 +224,8 @@ void init(void) {
         image_file = std::strcat(path, "/../assets/shapes.png");
         // std::cout << "full: " << image_file << std::endl << "Cube" << std::endl;
     #else        
-        //image_file = "assets/shapes.png";
-        image_file = "https://github.com/stevinz/extrude/blob/master/assets/shapes.png?raw=true";
+        image_file = "assets/shapes.png";
+        //image_file = "github.com/stevinz/extrude/blob/master/assets/shapes.png?raw=true";
     #endif
 
     sfetch_request_t (sokol_fetch_response) {

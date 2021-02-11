@@ -1,0 +1,132 @@
+[
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc   -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/demo/header_builds.c.o -c /Users/admin/Desktop/extrude/demo/header_builds.c",
+  "file": "/Users/admin/Desktop/extrude/demo/header_builds.c"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/demo/main.cpp.o -c /Users/admin/Desktop/extrude/demo/main.cpp",
+  "file": "/Users/admin/Desktop/extrude/demo/main.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/3rd_party/delaunator.cpp.o -c /Users/admin/Desktop/extrude/src/3rd_party/delaunator.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/3rd_party/delaunator.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/3rd_party/poly_partition.cpp.o -c /Users/admin/Desktop/extrude/src/3rd_party/poly_partition.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/3rd_party/poly_partition.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/3rd_party/polyline_simplification.cpp.o -c /Users/admin/Desktop/extrude/src/3rd_party/polyline_simplification.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/3rd_party/polyline_simplification.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/compare.cpp.o -c /Users/admin/Desktop/extrude/src/compare.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/compare.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/containers.cpp.o -c /Users/admin/Desktop/extrude/src/containers.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/containers.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc   -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/header_builds.c.o -c /Users/admin/Desktop/extrude/src/header_builds.c",
+  "file": "/Users/admin/Desktop/extrude/src/header_builds.c"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/imaging_compare.cpp.o -c /Users/admin/Desktop/extrude/src/imaging_compare.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/imaging_compare.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/imaging_filter.cpp.o -c /Users/admin/Desktop/extrude/src/imaging_filter.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/imaging_filter.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/mesh.cpp.o -c /Users/admin/Desktop/extrude/src/mesh.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/mesh.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/random.cpp.o -c /Users/admin/Desktop/extrude/src/random.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/random.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/string.cpp.o -c /Users/admin/Desktop/extrude/src/string.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/string.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/types/bitmap.cpp.o -c /Users/admin/Desktop/extrude/src/types/bitmap.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/types/bitmap.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/types/color.cpp.o -c /Users/admin/Desktop/extrude/src/types/color.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/types/color.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/types/image.cpp.o -c /Users/admin/Desktop/extrude/src/types/image.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/types/image.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/types/point.cpp.o -c /Users/admin/Desktop/extrude/src/types/point.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/types/point.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/types/pointf.cpp.o -c /Users/admin/Desktop/extrude/src/types/pointf.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/types/pointf.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/types/polygonf.cpp.o -c /Users/admin/Desktop/extrude/src/types/polygonf.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/types/polygonf.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/types/rect.cpp.o -c /Users/admin/Desktop/extrude/src/types/rect.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/types/rect.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/types/rectf.cpp.o -c /Users/admin/Desktop/extrude/src/types/rectf.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/types/rectf.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/types/vec2.cpp.o -c /Users/admin/Desktop/extrude/src/types/vec2.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/types/vec2.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/types/vec3.cpp.o -c /Users/admin/Desktop/extrude/src/types/vec3.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/types/vec3.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/vertex_data.cpp.o -c /Users/admin/Desktop/extrude/src/vertex_data.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/vertex_data.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/vertex_data_extrude.cpp.o -c /Users/admin/Desktop/extrude/src/vertex_data_extrude.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/vertex_data_extrude.cpp"
+},
+{
+  "directory": "/Users/admin/Desktop/extrude/build",
+  "command": "emcc    -std=c++11 --shell-file ../shell.html -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14 -o CMakeFiles/Extrude.dir/src/vertex_data_smooth.cpp.o -c /Users/admin/Desktop/extrude/src/vertex_data_smooth.cpp",
+  "file": "/Users/admin/Desktop/extrude/src/vertex_data_smooth.cpp"
+}
+]
