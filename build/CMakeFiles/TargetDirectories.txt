@@ -1,3 +1,0 @@
-/Users/admin/Desktop/extrude/build/CMakeFiles/rebuild_cache.dir
-/Users/admin/Desktop/extrude/build/CMakeFiles/edit_cache.dir
-/Users/admin/Desktop/extrude/build/CMakeFiles/Extrude.dir
