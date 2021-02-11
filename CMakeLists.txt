@@ -9,7 +9,7 @@
 #
 ##################################################################
 
-set(ExportTarget "mac")
+set(ExportTarget "web")
 
 ##################################################################
 cmake_minimum_required(VERSION 3.10)
@@ -91,7 +91,11 @@ elseif (ExportTarget MATCHES "web")
     set(CMAKE_CXX_COMPILER "emcc")
     SET(CMAKE_EXECUTABLE_SUFFIX ".html")
 
-    set_target_properties(Extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind") # --preload-file assets/shapes.png")
+    # Copy 'assets' directory to 'build' directory
+    add_custom_command(TARGET Extrude PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/ $<TARGET_FILE_DIR:Extrude>/assets/)
+
+    #set_target_properties(Extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --preload-file assets/shapes.png")
+    set_target_properties(Extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --embed-file assets/shapes.png")
 
     # -s WASM=0                         force javascript or
     # -s WASM=1                         use webassembly

@@ -36,7 +36,7 @@ bool CompareBitmaps(const DrBitmap &bitmap1, const DrBitmap &bitmap2) {
 
 
 //####################################################################################
-//##    Returns black / white image
+//##    Returns black / white image (binary)
 //##        alpha_tolerance is from 0.0 to 1.0
 //##        NORMAL  (inverse == false): transparent areas are black, objects are white
 //##        INVERSE (inverse == true) : transparent areas are white, objects are black

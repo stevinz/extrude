@@ -63,18 +63,6 @@ typedef struct {
 
 static void fetch_callback(const sfetch_response_t*);
 
-size_t stringLength(const char *strPtr) {
-    size_t n = 0;
-    while (strPtr[n]) ++n;
-    return n;
-}
-
-char* stringAdd(char *strPtr, const char *strPtr2) {
-    char *p = strPtr + stringLength( strPtr );
-    while ((*p++ = *strPtr2++));
-    return strPtr;
-}
-
 bool initialized_image = false;
 
 
@@ -90,7 +78,6 @@ sg_blend_state (sokol_blend_normal) {
     .src_factor_alpha =     SG_BLENDFACTOR_ONE,
     .dst_factor_alpha =     SG_BLENDFACTOR_ZERO,
     .op_alpha =             SG_BLENDOP_ADD,
-    .color_write_mask =     SG_COLORMASK_RGBA
 };
 // Alpha Enabled
 sg_blend_state (sokol_blend_alpha) {
@@ -101,31 +88,7 @@ sg_blend_state (sokol_blend_alpha) {
     .src_factor_alpha =     SG_BLENDFACTOR_SRC_ALPHA,
     .dst_factor_alpha =     SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
     .op_alpha =             SG_BLENDOP_ADD,
-    .color_write_mask =     SG_COLORMASK_RGBA
 };
-
-///glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);        // Premultiplied alpha blend
-// typedef enum sg_blend_factor {
-//     _SG_BLENDFACTOR_DEFAULT,    /* value 0 reserved for default-init */
-//     SG_BLENDFACTOR_ZERO,
-//     SG_BLENDFACTOR_ONE,
-//     SG_BLENDFACTOR_SRC_COLOR,
-//     SG_BLENDFACTOR_ONE_MINUS_SRC_COLOR,
-//     SG_BLENDFACTOR_SRC_ALPHA,
-//     SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
-//     SG_BLENDFACTOR_DST_COLOR,
-//     SG_BLENDFACTOR_ONE_MINUS_DST_COLOR,
-//     SG_BLENDFACTOR_DST_ALPHA,
-//     SG_BLENDFACTOR_ONE_MINUS_DST_ALPHA,
-//     SG_BLENDFACTOR_SRC_ALPHA_SATURATED,
-//     SG_BLENDFACTOR_BLEND_COLOR,
-//     SG_BLENDFACTOR_ONE_MINUS_BLEND_COLOR,
-//     SG_BLENDFACTOR_BLEND_ALPHA,
-//     SG_BLENDFACTOR_ONE_MINUS_BLEND_ALPHA,
-//     _SG_BLENDFACTOR_NUM,
-//     _SG_BLENDFACTOR_FORCE_U32 = 0x7FFFFFFF
-// } sg_blend_factor;
-
 
 
 //################################################################################
@@ -139,18 +102,18 @@ void init(void) {
     sg_setup(&sokol_gfx);
 
     // ***** Setup sokol-fetch (for loading files) with the minimal "resource limits"
-    #if !defined(__EMSCRIPTEN__)
+    //#if !defined(__EMSCRIPTEN__)
         sfetch_desc_t (sokol_fetch) {
-            .max_requests = 1,
-            .num_channels = 1,
+            .max_requests = 4,
+            .num_channels = 4,
             .num_lanes = 1
         };
         sfetch_setup(&sokol_fetch);
-    #endif
+    //#endif
     
     // ***** Pass action for clearing the framebuffer to some color
     sg_pass_action (pass_action) {
-        .colors[0] = { .action = SG_ACTION_CLEAR, .val = { 0.125f, 0.25f, 0.35f, 1.0f } }
+        .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.125f, 0.25f, 0.35f, 1.0f } }
     };
     state.pass_action = (pass_action);
 
@@ -189,8 +152,7 @@ void init(void) {
         {  1.0f,  1.0f, -1.0f,      0, 32767 },
     };
     sg_buffer_desc (sokol_buffer_vertex) {
-        .size = sizeof(vertices),
-        .content = vertices,
+        .data = SG_RANGE(vertices),
         .label = "cube-vertices"
     };
     state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
@@ -207,8 +169,7 @@ void init(void) {
     };
     sg_buffer_desc (sokol_buffer_index) {
         .type = SG_BUFFERTYPE_INDEXBUFFER,
-        .size = sizeof(indices),
-        .content = indices,
+        .data = SG_RANGE(indices),
         .label = "cube-indices"
     };
     state.bind.index_buffer = sg_make_buffer(&sokol_buffer_index);
@@ -216,7 +177,7 @@ void init(void) {
 
     // ***** Pipeline State Object, sets 3D device parameters
     sg_pipeline_desc (sokol_pipleine) {
-        .shader = sg_make_shader(extrude3D_shader_desc()),
+        .shader = sg_make_shader(extrude3D_shader_desc(sg_query_backend())),
         .layout = {
             .attrs = {
                 [ATTR_vs_pos].format = SG_VERTEXFORMAT_FLOAT3,
@@ -224,15 +185,13 @@ void init(void) {
             }
         },
         .index_type = SG_INDEXTYPE_UINT16,
-        .depth_stencil = {
-            .depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL,
-            .depth_write_enabled = true
-        },
-        .rasterizer = {
-            .cull_mode = SG_CULLMODE_BACK,
+        .cull_mode = SG_CULLMODE_BACK,
+        .depth = {
+            .compare = SG_COMPAREFUNC_LESS_EQUAL,
+            .write_enabled = true
         },
         .label = "cube-pipeline",
-        .blend = sokol_blend_alpha
+        .colors[0].blend = sokol_blend_alpha,
     };
     state.pip = sg_make_pipeline(&sokol_pipleine);
 
@@ -264,17 +223,18 @@ void init(void) {
         }
         image_file = std::strcat(path, "/../assets/shapes.png");
         // std::cout << "full: " << image_file << std::endl << "Cube" << std::endl;
-
-        sfetch_request_t (sokol_fetch_response) {
-            .path = image_file.c_str(),
-            .callback = fetch_callback,
-            .buffer_ptr = state.file_buffer,
-            .buffer_size = sizeof(state.file_buffer)
-        };
-        sfetch_send(&sokol_fetch_response);
     #else        
-        image_file = "assets/shapes.png";
+        //image_file = "assets/shapes.png";
+        image_file = "https://github.com/stevinz/extrude/blob/master/assets/shapes.png?raw=true";
     #endif
+
+    sfetch_request_t (sokol_fetch_response) {
+        .path = image_file.c_str(),
+        .callback = fetch_callback,
+        .buffer_ptr = state.file_buffer,
+        .buffer_size = sizeof(state.file_buffer)
+    };
+    sfetch_send(&sokol_fetch_response);
     
 }
 
@@ -285,25 +245,30 @@ void init(void) {
 static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
     int png_width, png_height, num_channels;
     const int desired_channels = 4;
-    stbi_uc* pixels = stbi_load_from_memory(buffer_ptr, fetched_size, &png_width, &png_height, 
-                                            &num_channels, desired_channels);
+    stbi_uc* pixels = stbi_load_from_memory(buffer_ptr, fetched_size, &png_width, &png_height, &num_channels, desired_channels);
+
+    // Stb Load Succeeded
     if (pixels) {
 
+        // Copy data into our custom bitmap class, create image and trace outline
         DrBitmap bitmap = DrBitmap(pixels, static_cast<int>(png_width * png_height * 4), false, png_width, png_height);
-        //bitmap.forceAlpha();
         //bitmap = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, bitmap, Dr::RandomInt(-100, 100));
-        DrImage *dr_image = new DrImage("shapes", bitmap);
+        DrImage *image = new DrImage("shapes", bitmap);
+
+        // Create 3D extrusion
+        //DrEngineVertexData *texture_data = new DrEngineVertexData();
+        //texture_data->initializeExtrudedImage(image, wireframe);
 
         // Initialze the sokol-gfx texture
         sg_image_desc (sokol_image) {
-            .width =  dr_image->getBitmap().width,
-            .height = dr_image->getBitmap().height,
+            .width =  image->getBitmap().width,
+            .height = image->getBitmap().height,
             .pixel_format = SG_PIXELFORMAT_RGBA8,
             .min_filter = SG_FILTER_LINEAR,
             .mag_filter = SG_FILTER_LINEAR,
-            .content.subimage[0][0] = {
-                .ptr =  &(dr_image->getBitmap().data[0]),
-                .size = dr_image->getBitmap().size(),
+            .data.subimage[0][0] = {
+                .ptr =  &(image->getBitmap().data[0]),
+                .size = (size_t)image->getBitmap().size(),
             }
         };
         if (initialized_image == true) {
@@ -329,14 +294,30 @@ static void fetch_callback(const sfetch_response_t* response) {
     else if (response->finished) {
         // if loading the file failed, set clear color to red
         if (response->failed) {
-            sg_pass_action (pass_action0) { .colors[0] = { .action = SG_ACTION_CLEAR, .val = { 1.0f, 0.0f, 0.0f, 1.0f } } };
-            sg_pass_action (pass_action1) { .colors[0] = { .action = SG_ACTION_CLEAR, .val = { 0.0f, 1.0f, 0.0f, 1.0f } } };
-            sg_pass_action (pass_action2) { .colors[0] = { .action = SG_ACTION_CLEAR, .val = { 0.0f, 0.0f, 1.0f, 1.0f } } };
+            sg_pass_action (pass_action0) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 1.0f, 1.0f, 1.0f } } };        // white
+            sg_pass_action (pass_action1) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 0.0f, 0.0f, 1.0f } } };        // red
+            sg_pass_action (pass_action2) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.0f, 1.0f, 0.0f, 1.0f } } };        // green
+            sg_pass_action (pass_action3) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.0f, 0.0f, 1.0f, 1.0f } } };        // blue 
+            sg_pass_action (pass_action4) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 1.0f, 0.0f, 1.0f } } };        // yellow
+            sg_pass_action (pass_action5) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.0f, 1.0f, 1.0f, 1.0f } } };        // cyan
+            sg_pass_action (pass_action6) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 0.0f, 1.0f, 1.0f } } };        // magenta
+            sg_pass_action (pass_action7) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.0f, 0.0f, 0.0f, 1.0f } } };        // black
 
+            // - if the file doesn't exist or couldn't be opened for other reasons         (SFETCH_ERROR_FILE_NOT_FOUND)
+            // - if no buffer is associated with the request in the FETCHING state         (SFETCH_ERROR_NO_BUFFER)
+            // - if the provided buffer is too small to hold the entire file               (SFETCH_ERROR_BUFFER_TOO_SMALL)
+            // - if less bytes could be read from the file then expected                   (SFETCH_ERROR_UNEXPECTED_EOF)
+            // - if a request has been cancelled via sfetch_cancel()                       (SFETCH_ERROR_CANCELLED)
+    
             switch (response->error_code) {
-                case SFETCH_ERROR_FILE_NOT_FOUND:   state.pass_action = (pass_action0);     break;
-                case SFETCH_ERROR_NO_BUFFER:        state.pass_action = (pass_action1);     break;
-                default:                            state.pass_action = (pass_action2);
+                case SFETCH_ERROR_NO_ERROR:             state.pass_action = (pass_action0);     break;
+                case SFETCH_ERROR_FILE_NOT_FOUND:       state.pass_action = (pass_action1);     break;
+                case SFETCH_ERROR_NO_BUFFER:            state.pass_action = (pass_action2);     break;
+                case SFETCH_ERROR_BUFFER_TOO_SMALL:     state.pass_action = (pass_action3);     break;
+                case SFETCH_ERROR_UNEXPECTED_EOF:       state.pass_action = (pass_action4);     break;
+                case SFETCH_ERROR_CANCELLED:            state.pass_action = (pass_action5);     break;
+                case SFETCH_ERROR_INVALID_HTTP_STATUS:  state.pass_action = (pass_action6);     break;
+                default:                                state.pass_action = (pass_action7);
             }            
         }
     }
@@ -410,9 +391,9 @@ static void input(const sapp_event* ev) {
 */
 static void frame(void) {
     /* pump the sokol-fetch message queues, and invoke response callbacks */
-    #if !defined(__EMSCRIPTEN__)
+    //#if !defined(__EMSCRIPTEN__)
         sfetch_dowork();
-    #endif
+    //#endif
 
     /* compute model-view-projection matrix for vertex shader */
     hmm_mat4 proj = HMM_Perspective(60.0f, (float)sapp_width()/(float)sapp_height(), 0.01f, 10.0f);
@@ -429,7 +410,8 @@ static void frame(void) {
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
     sg_apply_pipeline(state.pip);
     sg_apply_bindings(&state.bind);
-    sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
+    sg_range params_range = SG_RANGE(vs_params);
+    sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &params_range);
     sg_draw(0, 36, 1);
 
     sg_end_pass();
@@ -441,9 +423,9 @@ static void frame(void) {
 //##    Clean Up
 //################################################################################
 void cleanup(void) {
-    #if !defined(__EMSCRIPTEN__)
+    //#if !defined(__EMSCRIPTEN__)
         sfetch_shutdown();
-    #endif
+    //#endif
     sg_shutdown();
 }
 
