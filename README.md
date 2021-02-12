@@ -1,15 +1,14 @@
 # Extrude
 
-asm.js.wasm live demo: https://stevinz.github.io/extrude-html5/
+Extrudes an image into an 3D model in c++. Sample VS Code project that uses the single file sokol libraries for rendering the extruded model.
 
-Function to extract an outline from an image with an alpha channel and turn the resulting outline into an extruded 3D model. 
-Sample VS Code project that uses the single file sokol libraries for rendering the extruded model.
+asm.js.wasm live demo: https://stevinz.github.io/extrude-html5/
 
 ## How it works:
 
 TODO
 
-## Thanks to these libraries used for helping extrusion:
+## Thanks to these libraries used during extrusion:
 
 - Delaunator: https://github.com/delfrrr/delaunator-cpp
 - Handmade-Math: https://github.com/StrangeZak/Handmade-Math
