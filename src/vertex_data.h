@@ -29,8 +29,16 @@ typedef std::map<DrVec3, std::vector<Vertex>> NeighborMap;
 #define PAR_RGBA 4
 
 // Constants
-const int   c_vertex_length = 11;           // 11 is (3) for xyz + (3) for normal + (2) for texture coordinate + (3) for barycentric (for wireframe)
+const int   c_vertex_length = 11;
 const float c_extrude_depth = 0.5f;
+
+// Vertex Declaration (11 total data points)
+typedef struct {
+    float x, y, z;          // Position
+    float n1, n2, n3;       // Normal
+    float u, v;             // Texture Coordinate
+    float b1, b2, b3;       // Barycentric coordinate (used for wireframe rendering)
+} vertex_t;
 
 // Local Enums
 enum class Trianglulation {
@@ -53,18 +61,17 @@ enum class Triangle_Point {
 class DrEngineVertexData
 {
 private:
-    std::vector<float>      m_data;
-    int                     m_count;
+    std::vector<vertex_t>   m_vertices;
 
 public:
     // Constructor
     DrEngineVertexData();
 
     // Properties
-    const float    *constData() const {     return m_data.data(); }
-    int             count() const {         return m_count; }
+    vertex_t       *vertices() {            return m_vertices.data(); }
+    int             count() const {         return m_vertices.size(); }
     int             triangleCount() const { return vertexCount() / 3; }
-    int             vertexCount() const {   return m_count / c_vertex_length; }
+    int             vertexCount() const {   return count(); }
 
     // Creation Functions
     void    initializeExtrudedImage(DrImage *image, bool wireframe = true);
@@ -73,15 +80,10 @@ public:
     void    initializeTextureCube();
     void    initializeTextureQuad();
 
+
     // Helper Functions
     static  std::vector<DrPointF>   insertPoints(  const std::vector<DrPointF> &outline_points);
-    static  std::vector<DrPointF>   simplifyPoints(const std::vector<DrPointF> &outline_points, double tolerance, int test_count, bool average = false);
     static  std::vector<DrPointF>   smoothPoints(  const std::vector<DrPointF> &outline_points, int neighbors, double neighbor_distance, double weight);
-
-    Mesh                        getMesh(NeighborMap &neighbors);
-    Vertex                      getVertex(int vertex_number);
-    void                        setVertex(int vertex_number, Vertex v);
-    void                        smoothVertices(float weight);
 
 
     // Extrusion Functions

@@ -178,7 +178,7 @@ DrVec3 operator*(const float d_, const DrVec3 &vec) {
 
 // Left  hand side (lhs) matrix multiplication
 DrVec3   operator*   (const hmm_mat4 &matrix, const DrVec3 &vec) {
-    hmm_vec4 multiplied = HMM_MultiplyMat4ByVec4(matrix, hmm_vec4 { vec.x, vec.y, vec.z, 1.f});
+    hmm_vec4 multiplied = matrix * hmm_vec4 { vec.x, vec.y, vec.z, 1.f };
     return DrVec3(multiplied.X, multiplied.Y, multiplied.Z);
 }
 

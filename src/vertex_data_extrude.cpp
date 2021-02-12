@@ -8,6 +8,7 @@
 //
 //
 #include <algorithm>
+#include <iostream>
 #include <limits>
 
 #include "3rd_party/delaunator.h"
@@ -26,7 +27,8 @@
 //##    Builds an Extruded DrImage Model
 //####################################################################################
 void DrEngineVertexData::initializeExtrudedImage(DrImage *image, bool wireframe) {
-    m_data.resize(100 * c_vertex_length);
+
+    std::cout << "Extruding, number of polygons: " << static_cast<int>(image->m_poly_list.size()) << std::endl;
 
     for (int poly_number = 0; poly_number < static_cast<int>(image->m_poly_list.size()); poly_number++) {
         if (image->getBitmap().width < 1 || image->getBitmap().height < 1) continue;
@@ -36,95 +38,18 @@ void DrEngineVertexData::initializeExtrudedImage(DrImage *image, bool wireframe)
         std::vector<std::vector<DrPointF>> &hole_list = image->m_hole_list[poly_number];
 
         double alpha_tolerance = (image->m_outline_processed) ? c_alpha_tolerance : 0.0;
-        ///triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Ear_Clipping, alpha_tolerance);
-        ///triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Optimal_Polygon, alpha_tolerance);
-        ///triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Monotone, alpha_tolerance);
-        triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Delaunay, alpha_tolerance);
+        triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Ear_Clipping, alpha_tolerance);
+        //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Monotone, alpha_tolerance);
+        //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Delaunay, alpha_tolerance);
 
         // ***** Add extruded triangles from Hull and Holes
-        int slices = wireframe ? 2 : 1;
-        extrudeFacePolygon(points, image->getBitmap().width, image->getBitmap().height, slices);
-        for (auto &hole : hole_list) {
-            extrudeFacePolygon(hole, image->getBitmap().width, image->getBitmap().height, slices);
-        }
+        // int slices = wireframe ? 2 : 1;
+        // extrudeFacePolygon(points, image->getBitmap().width, image->getBitmap().height, slices);
+        // for (auto &hole : hole_list) {
+        //     extrudeFacePolygon(hole, image->getBitmap().width, image->getBitmap().height, slices);
+        // }
     }
 
-    // ***** Smooth Vertices
-    ///smoothVertices(1.0f);
-}
-
-
-//####################################################################################
-//##    #NOTE: This function superseeded by "3rd_party/polyline_simplification.h"
-//##
-//##    Simplifies a list of points representing a 2D outline, reducing multiple points along the same slope
-//##        NOTE: If ((y2-y1) / (x2-x1)) == ((y3-y1)/(x3-x1)), then slope is same and is along same line
-//##        tolerance:  how similar slop should be, bigger numbers causes less points
-//##                    0.01 looks nice for most objects, 1.0 looks good for #KEYWORD: "low poly", "low-poly"
-//##        test_count: how many points to test before we just go ahead and add a point
-//####################################################################################
-std::vector<DrPointF> DrEngineVertexData::simplifyPoints(const std::vector<DrPointF> &outline_points, double tolerance, int test_count, bool average) {
-    std::vector<DrPointF> simple_points;
-    if (outline_points.size()  > 0) simple_points.push_back(outline_points[0]);            // Add first point
-    if (outline_points.size() == 2) simple_points.push_back(outline_points[1]);            // Add second / last point if only two points
-    if (outline_points.size()  > 2) {
-        int at_point =      0;
-        int next_point =    1;
-        int check_point  =  2;
-
-        // Loop through points finding lines and eliminating duplicate points among them
-        while (at_point < static_cast<int>(outline_points.size()) - 1) {
-            bool found_next_end_point =false;
-            int  count = 0;
-            do {
-                double x1 = outline_points[at_point].x;
-                double y1 = outline_points[at_point].y;
-
-                double x2 = outline_points[next_point].x;
-                double y2 = outline_points[next_point].y;
-                if (average && (next_point - at_point > 1)) {
-                    int diff = next_point - at_point;
-                    int index = at_point + (diff / 2);
-                    x2 = outline_points[index].x;
-                    y2 = outline_points[index].y;
-                }
-
-                double x3 = outline_points[check_point].x;
-                double y3 = outline_points[check_point].y;
-                ++count;
-
-                // Check if slope is no longer the same, which means the line has changed direction
-                double slope1 = (y2-y1) / (x2-x1);
-                double slope2 = (y3-y1) / (x3-x1);
-                bool   slope_is_the_same = false;
-                if (Dr::FuzzyCompare(y1, y2) && Dr::FuzzyCompare(y2, y3))
-                    slope_is_the_same = true;
-                else if (Dr::FuzzyCompare(x1, x2) && Dr::FuzzyCompare(x2, x3))
-                    slope_is_the_same = true;
-                else if (Dr::IsCloseTo(slope1, slope2, tolerance))
-                    slope_is_the_same = true;
-
-
-                if (!slope_is_the_same || count > test_count) {
-                    found_next_end_point = true;
-                    at_point = next_point;
-                    simple_points.push_back(outline_points[at_point]);
-                }
-
-                ++next_point;
-                ++check_point;
-
-                // Check point is at the end
-                if (check_point == static_cast<int>(outline_points.size())) {
-                    found_next_end_point = true;
-                    at_point = check_point - 1;
-                    simple_points.push_back(outline_points[at_point]);
-                }
-
-            } while (found_next_end_point == false);
-        }
-    }
-    return simple_points;
 }
 
 

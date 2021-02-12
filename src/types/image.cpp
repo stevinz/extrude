@@ -7,6 +7,8 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
+#include <iostream>
+
 #include "../3rd_party/polyline_simplification.h"
 #include "../compare.h"
 #include "../imaging.h"
@@ -72,6 +74,8 @@ void DrImage::autoOutlinePoints() {
     bool    cancel = Dr::FindObjectsInBitmap(m_bitmap, bitmaps, rects, c_alpha_tolerance, true);
     int     number_of_objects = static_cast<int>(bitmaps.size());
 
+    std::cout << "Number of objects in image: " << number_of_objects << std::endl;
+
     // ***** If Find Objects In Bitmap never finished, just add simple box shape
     if (cancel) { setSimpleBox(); return; }
 
@@ -93,11 +97,6 @@ void DrImage::autoOutlinePoints() {
             point.x = point.x * plus_one_pixel_percent_x;
             point.y = point.y * plus_one_pixel_percent_y;
         }
-
-        // Old Way of Simplifying Points on Similar Slopes
-        ///int split = wireframe ? int((((image.width() + image.height()) / 2) * 0.2) / 5) : 1000;      // Splits longest lines of outline into 5 triangles
-        ///one_poly = simplifyPoints(one_poly, 0.030,     5, true );        // First run with averaging points to reduce triangles among similar slopes
-        ///one_poly = simplifyPoints(one_poly, 0.001, split, false);        // Run again with smaller tolerance to reduce triangles along straight lines
 
         // Remove duplicate first point
         if (one_poly.size() > 3) one_poly.pop_back();

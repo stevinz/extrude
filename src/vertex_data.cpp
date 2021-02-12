@@ -15,17 +15,15 @@
 
 
 //####################################################################################
-//##    Constructor - Texture Cube
+//##    Constructor
 //####################################################################################
-DrEngineVertexData::DrEngineVertexData() : m_count(0) { }
+DrEngineVertexData::DrEngineVertexData() { }
 
 
 //####################################################################################
 //##    Builds a Textured Quad
 //####################################################################################
 void DrEngineVertexData::initializeTextureQuad() {
-    m_data.resize(6 * c_vertex_length);
-
     int   width =  1;
     int   height = 1;
     float w2 = width  / 2.f;
@@ -57,8 +55,6 @@ void DrEngineVertexData::initializeTextureQuad() {
 //##    Builds a Textured Cube
 //####################################################################################
 void DrEngineVertexData::initializeTextureCube() {
-    m_data.resize(36 * c_vertex_length);
-
     int   width =  1;
     int   height = 1;
     float w2 = width  / 2.f;
@@ -86,8 +82,6 @@ void DrEngineVertexData::initializeTextureCube() {
 //##    Builds a Textured Spike (eventually cone)
 //####################################################################################
 void DrEngineVertexData::initializeTextureCone() {
-    m_data.resize(16 * c_vertex_length);
-
     int   width =  1;
     int   height = 1;
     float w2 = width  / 2.f;
@@ -122,14 +116,13 @@ void DrEngineVertexData::initializeTextureCone() {
         add(point_bl, n, DrVec2(tx2, ty2), Triangle_Point::Point2);
         add(point_br, n, DrVec2(tx3, ty3), Triangle_Point::Point3);
 
-        rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(Dr::DegreesToRadians(90.f), { 0.0, 1.0, 0.0 }));
+        rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(90.f, { 0.0, 1.0, 0.0 }));         // Angle is in degrees
 
         point_t =  rotate * point_t;
         point_bl = rotate * point_bl;
         point_br = rotate * point_br;
         n =        rotate * n;
     }
-
 
     // Bottom Square
     x1 =  +w2;  y1 = +h2;                       // Top Right
@@ -151,7 +144,7 @@ void DrEngineVertexData::initializeTextureCone() {
     p3f = DrVec3(x3, y3, +c_extrude_depth);
     p4f = DrVec3(x4, y4, +c_extrude_depth);
 
-    rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(Dr::DegreesToRadians(90.f), { 1.0, 0.0, 0.0 }));
+    rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(90.f, { 1.0, 0.0, 0.0 }));             // Angle is in degrees
 
     nf =    rotate * nf;
     p1f =   rotate * p1f;
@@ -168,8 +161,6 @@ void DrEngineVertexData::initializeTextureCone() {
 }
 
 
-
-
 //####################################################################################
 //##    Adds a Vertex, including:
 //##        Vec3 Position
@@ -178,22 +169,21 @@ void DrEngineVertexData::initializeTextureCone() {
 //##        Vec3 Barycentric Coordinates (gives shader a number between 0.0 and 1.0 to lerp to)
 //####################################################################################
 void DrEngineVertexData::add(const DrVec3 &vertex, const DrVec3 &normal, const DrVec2 &text_coord, Triangle_Point point_number) {
-    if (static_cast<size_t>(m_count + c_vertex_length) > m_data.size()) m_data.resize(m_data.size() + (100 * c_vertex_length));
-    float *p = m_data.data() + m_count;
-    *p++ = vertex.x;                    // 0 - x
-    *p++ = vertex.y;                    // 1 - y
-    *p++ = vertex.z;                    // 2 - z
-    *p++ = normal.x;                    // 3 - normal x
-    *p++ = normal.y;                    // 4 - normal y
-    *p++ = normal.z;                    // 5 - normal z
-    *p++ = text_coord.x;                // 6 - texture x
-    *p++ = text_coord.y;                // 7 - texture y
+    vertex_t v;
+    v.x =  vertex.x;
+    v.y =  vertex.y;
+    v.z =  vertex.z;
+    v.n1 = normal.x;
+    v.n2 = normal.y;
+    v.n3 = normal.z;
+    v.u =  text_coord.x;
+    v.v =  text_coord.y;
     switch (point_number) {
-        case Triangle_Point::Point1:    *p++ = 1;   *p++ = 0;   *p++ = 0;   break;
-        case Triangle_Point::Point2:    *p++ = 0;   *p++ = 1;   *p++ = 0;   break;
-        case Triangle_Point::Point3:    *p++ = 0;   *p++ = 0;   *p++ = 1;   break;
+        case Triangle_Point::Point1:    v.b1 = 1;   v.b2 = 0;   v.b3 = 0;   break;
+        case Triangle_Point::Point2:    v.b1 = 0;   v.b2 = 1;   v.b3 = 0;   break;
+        case Triangle_Point::Point3:    v.b1 = 0;   v.b2 = 0;   v.b3 = 1;   break;
     }
-    m_count += c_vertex_length;
+    m_vertices.push_back(v);
 }
 
 
@@ -222,9 +212,9 @@ void DrEngineVertexData::cube(float x1, float y1, float tx1, float ty1,
         p4b = DrVec3(x4, y4, -c_extrude_depth);
 
         if (i == 1) {
-            rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(Dr::DegreesToRadians(90.f), { 0.0, 1.0, 0.0 }));
+            rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(90.f, { 0.0, 1.0, 0.0 }));         // Angle is in degrees
         } else if (i == 2) {
-            rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(Dr::DegreesToRadians(90.f), { 1.0, 0.0, 0.0 }));
+            rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(90.f, { 1.0, 0.0, 0.0 }));         // Angle is in degrees
         }
 
         nf =    rotate * nf;
@@ -285,6 +275,7 @@ void DrEngineVertexData::quad(float x1, float y1, float tx1, float ty1,
     add(DrVec3(x4, y4, -c_extrude_depth), n, DrVec2(tx4, ty4), Triangle_Point::Point3);
 }
 
+
 //####################################################################################
 //##    Adds a Triangle, front and back
 //####################################################################################
@@ -304,6 +295,7 @@ void DrEngineVertexData::triangle(float x1, float y1, float tx1, float ty1,
     add(DrVec3(x3, y3, -c_extrude_depth), n, DrVec2(tx3, ty3), Triangle_Point::Point2);
     add(DrVec3(x2, y2, -c_extrude_depth), n, DrVec2(tx2, ty2), Triangle_Point::Point3);
 }
+
 
 //####################################################################################
 //##    Adds a Quad extruded from an Edge

@@ -170,7 +170,27 @@ bool IsSameColor(const DrColor &color1, const DrColor &color2, double tolerance)
 //##
 //############################
 hmm_m4 IdentityMatrix() {
-    return { 1.0, 1.0, 1.0, 1.0 };
+    hmm_m4 m;
+    m.Elements[0][0] = 1.0;
+    m.Elements[0][1] = 0.0;
+    m.Elements[0][2] = 0.0;
+    m.Elements[0][3] = 0.0;
+
+    m.Elements[1][0] = 0.0;
+    m.Elements[1][1] = 1.0;
+    m.Elements[1][2] = 0.0;
+    m.Elements[1][3] = 0.0;
+
+    m.Elements[2][0] = 0.0;
+    m.Elements[2][1] = 0.0;
+    m.Elements[2][2] = 1.0;
+    m.Elements[2][3] = 0.0;
+
+    m.Elements[3][0] = 0.0;
+    m.Elements[3][1] = 0.0;
+    m.Elements[3][2] = 0.0;
+    m.Elements[3][3] = 1.0;
+    return m;
 }
 
 

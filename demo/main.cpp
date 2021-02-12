@@ -12,12 +12,14 @@
 //################################################################################
 #include "../src/3rd_party/handmade_math.h"
 #include "../src/3rd_party/stb/stb_image.h"
+#include "../src/compare.h"
 #include "../src/imaging.h"
 #include "../src/random.h"
 #include "../src/types/bitmap.h"
 #include "../src/types/color.h"
 #include "../src/types/image.h"
 #include "../src/types/rect.h"
+#include "../src/vertex_data.h"
 
 #include <iostream>
 
@@ -37,7 +39,7 @@
 //################################################################################
 //##    Local Structs / Defines
 //################################################################################
-#define MAX_FILE_SIZE (1024 * 1024)
+#define MAX_FILE_SIZE (2048 * 2048)
 
 typedef enum {
     LOADSTATE_UNKNOWN = 0,
@@ -56,14 +58,10 @@ static struct {
     uint8_t file_buffer[MAX_FILE_SIZE];
 } state;
 
-typedef struct {
-    float x, y, z;
-    int16_t u, v;
-} vertex_t;
-
 static void fetch_callback(const sfetch_response_t*);
 
 bool initialized_image = false;
+int  image_size = 1;
 
 
 //################################################################################
@@ -101,6 +99,7 @@ void init(void) {
     };            
     sg_setup(&sokol_gfx);
 
+
     // ***** Setup sokol-fetch (for loading files) with the minimal "resource limits"
     sfetch_desc_t (sokol_fetch) {
         .max_requests = 4,
@@ -109,6 +108,7 @@ void init(void) {
     };
     sfetch_setup(&sokol_fetch);
         
+
     // ***** Pass action for clearing the framebuffer to some color
     sg_pass_action (pass_action) {
         .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.125f, 0.25f, 0.35f, 1.0f } }
@@ -116,61 +116,18 @@ void init(void) {
     state.pass_action = (pass_action);
 
 
-    // ***** Cube vertex buffer with packed texcoords
+    // ***** Starter triangle
     const vertex_t vertices[] = {
-        /* pos                  uvs */
-        { -1.0f, -1.0f, -1.0f,      0,     0 },
-        {  1.0f, -1.0f, -1.0f,  32767,     0 },
-        {  1.0f,  1.0f, -1.0f,  32767, 32767 },
-        { -1.0f,  1.0f, -1.0f,      0, 32767 },
-
-        { -1.0f, -1.0f,  1.0f,      0,     0 },
-        {  1.0f, -1.0f,  1.0f,  32767,     0 },
-        {  1.0f,  1.0f,  1.0f,  32767, 32767 },
-        { -1.0f,  1.0f,  1.0f,      0, 32767 },
-
-        { -1.0f, -1.0f, -1.0f,      0,     0 },
-        { -1.0f,  1.0f, -1.0f,  32767,     0 },
-        { -1.0f,  1.0f,  1.0f,  32767, 32767 },
-        { -1.0f, -1.0f,  1.0f,      0, 32767 },
-
-        {  1.0f, -1.0f, -1.0f,      0,     0 },
-        {  1.0f,  1.0f, -1.0f,  32767,     0 },
-        {  1.0f,  1.0f,  1.0f,  32767, 32767 },
-        {  1.0f, -1.0f,  1.0f,      0, 32767 },
-
-        { -1.0f, -1.0f, -1.0f,      0,     0 },
-        { -1.0f, -1.0f,  1.0f,  32767,     0 },
-        {  1.0f, -1.0f,  1.0f,  32767, 32767 },
-        {  1.0f, -1.0f, -1.0f,      0, 32767 },
-
-        { -1.0f,  1.0f, -1.0f,      0,     0 },
-        { -1.0f,  1.0f,  1.0f,  32767,     0 },
-        {  1.0f,  1.0f,  1.0f,  32767, 32767 },
-        {  1.0f,  1.0f, -1.0f,      0, 32767 },
+        // pos                  normals                uvs          barycentric (wireframe)
+        {  1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f,      1,   1,      1.0f, 1.0f, 1.0f },
+        {  0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f,      0,   1,      1.0f, 1.0f, 1.0f },
+        {  1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f,      1,   0,      1.0f, 1.0f, 1.0f },
     };
     sg_buffer_desc (sokol_buffer_vertex) {
         .data = SG_RANGE(vertices),
-        .label = "cube-vertices"
+        .label = "temp-vertices"
     };
     state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
-
-
-    // ***** Create an index buffer for the cube
-    const uint16_t indices[] = {
-         0,  1,  2,   0,  2,  3,
-         6,  5,  4,   7,  6,  4,
-         8,  9, 10,   8, 10, 11,
-        14, 13, 12,  15, 14, 12,
-        16, 17, 18,  16, 18, 19,
-        22, 21, 20,  23, 22, 20
-    };
-    sg_buffer_desc (sokol_buffer_index) {
-        .type = SG_BUFFERTYPE_INDEXBUFFER,
-        .data = SG_RANGE(indices),
-        .label = "cube-indices"
-    };
-    state.bind.index_buffer = sg_make_buffer(&sokol_buffer_index);
 
 
     // ***** Pipeline State Object, sets 3D device parameters
@@ -179,16 +136,19 @@ void init(void) {
         .layout = {
             .attrs = {
                 [ATTR_vs_pos].format = SG_VERTEXFORMAT_FLOAT3,
-                [ATTR_vs_texcoord0].format = SG_VERTEXFORMAT_SHORT2N
+                [ATTR_vs_norm].format = SG_VERTEXFORMAT_FLOAT3,
+                [ATTR_vs_texcoord0].format = SG_VERTEXFORMAT_FLOAT2,
+                [ATTR_vs_bary].format = SG_VERTEXFORMAT_FLOAT3,
             }
         },
-        .index_type = SG_INDEXTYPE_UINT16,
-        .cull_mode = SG_CULLMODE_BACK,
+        .primitive_type  = SG_PRIMITIVETYPE_TRIANGLES,
+        .index_type = SG_INDEXTYPE_NONE,
+        .cull_mode = SG_CULLMODE_NONE, //SG_CULLMODE_FRONT,
         .depth = {
             .compare = SG_COMPAREFUNC_LESS_EQUAL,
             .write_enabled = true
         },
-        .label = "cube-pipeline",
+        .label = "extrude-pipeline",
         .colors[0].blend = sokol_blend_alpha,
     };
     state.pip = sg_make_pipeline(&sokol_pipleine);
@@ -217,10 +177,9 @@ void init(void) {
             path[dirname_length] = '\0';
             printf("  dirname: %s\n", path);
             printf("  basename: %s\n", path + dirname_length + 1);
-            //free(path);
+            image_file = std::strcat(path, "/../assets/shapes.png");
+            free(path);
         }
-        image_file = std::strcat(path, "/../assets/shapes.png");
-        // std::cout << "full: " << image_file << std::endl << "Cube" << std::endl;
     #else        
         // ********** NOTE: About loading images with Emscripten **********
         //  When running html on local machine, must disable CORS in broswer
@@ -251,16 +210,33 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
     // Stb Load Succeeded
     if (pixels) {
 
-        // Copy data into our custom bitmap class, create image and trace outline
+        // ********** Copy data into our custom bitmap class, create image and trace outline
         DrBitmap bitmap = DrBitmap(pixels, static_cast<int>(png_width * png_height * 4), false, png_width, png_height);
         //bitmap = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, bitmap, Dr::RandomInt(-100, 100));
         DrImage *image = new DrImage("shapes", bitmap);
 
-        // Create 3D extrusion
-        //DrEngineVertexData *texture_data = new DrEngineVertexData();
+        // ********** Create 3D extrusion
+        DrEngineVertexData *texture_data = new DrEngineVertexData();
+        bool wireframe = false;
         //texture_data->initializeExtrudedImage(image, wireframe);
+        //texture_data->initializeTextureQuad();
+        texture_data->initializeTextureCube();
 
-        // Initialze the sokol-gfx texture
+        // ********** Copy vertex data and set into state buffer
+        std::cout << "Vertex count: " << texture_data->count() << std::endl;
+        if (texture_data->count() > 0) {
+            vertex_t vertices[texture_data->count()];
+            for (size_t i = 0; i < texture_data->count(); i++) {
+                vertices[i] = texture_data->vertices()[i];
+            }
+            sg_buffer_desc (sokol_buffer_vertex) {
+                .data = SG_RANGE(vertices),
+                .label = "extruded-vertices"
+            };
+            state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
+        }
+        
+        // ********** Initialze the sokol-gfx texture
         sg_image_desc (sokol_image) {
             .width =  image->getBitmap().width,
             .height = image->getBitmap().height,
@@ -272,9 +248,14 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
                 .size = (size_t)image->getBitmap().size(),
             }
         };
-        if (initialized_image == true) {
-            sg_uninit_image(state.bind.fs_images[SLOT_tex]);
-        }
+        
+        // Set new camera eye position based on image size
+        image_size = Dr::Max(image->getBitmap().width, image->getBitmap().height);      
+
+        // If we already have an image in the state buffer, uninit before initializing new image
+        if (initialized_image == true) { sg_uninit_image(state.bind.fs_images[SLOT_tex]); }
+
+        // Initialize new image into state buffer
         sg_init_image(state.bind.fs_images[SLOT_tex], &sokol_image);
         initialized_image = true;
         stbi_image_free(pixels);
@@ -288,12 +269,12 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
    or when an error has occurred. */
 static void fetch_callback(const sfetch_response_t* response) {
     if (response->fetched) {
-        /* the file data has been fetched, since we provided a big-enough
-           buffer we can be sure that all data has been loaded here */
+        // File data has been fetched
+        //  Since we provided a big-enough buffer we can be sure that all data has been loaded here
         load_image((stbi_uc *)response->buffer_ptr, (int)response->fetched_size);
     }
     else if (response->finished) {
-        // if loading the file failed, set clear color to red
+        // If loading the file failed, set clear color to signal reason
         if (response->failed) {
             sg_pass_action (pass_action0) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 1.0f, 1.0f, 1.0f } } };        // white
             sg_pass_action (pass_action1) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 0.0f, 0.0f, 1.0f } } };        // red
@@ -303,12 +284,6 @@ static void fetch_callback(const sfetch_response_t* response) {
             sg_pass_action (pass_action5) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.0f, 1.0f, 1.0f, 1.0f } } };        // cyan
             sg_pass_action (pass_action6) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 0.0f, 1.0f, 1.0f } } };        // magenta
             sg_pass_action (pass_action7) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.0f, 0.0f, 0.0f, 1.0f } } };        // black
-
-            // - if the file doesn't exist or couldn't be opened for other reasons         (SFETCH_ERROR_FILE_NOT_FOUND)
-            // - if no buffer is associated with the request in the FETCHING state         (SFETCH_ERROR_NO_BUFFER)
-            // - if the provided buffer is too small to hold the entire file               (SFETCH_ERROR_BUFFER_TOO_SMALL)
-            // - if less bytes could be read from the file then expected                   (SFETCH_ERROR_UNEXPECTED_EOF)
-            // - if a request has been cancelled via sfetch_cancel()                       (SFETCH_ERROR_CANCELLED)
     
             switch (response->error_code) {
                 case SFETCH_ERROR_NO_ERROR:             state.pass_action = (pass_action0);     break;
@@ -395,8 +370,8 @@ static void frame(void) {
     sfetch_dowork();
 
     // ***** Compute model-view-projection matrix for vertex shader
-    hmm_mat4 proj = HMM_Perspective(60.0f, (float)sapp_width()/(float)sapp_height(), 0.01f, 10.0f);
-    hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, 6.0f), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
+    hmm_mat4 proj = HMM_Perspective(60.0f, (float)sapp_width()/(float)sapp_height(), 0.01f, 1000.0f);
+    hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, image_size * 1.5f), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
     hmm_mat4 view_proj = HMM_MultiplyMat4(proj, view);
     vs_params_t vs_params;
     state.rx += 1.0f; 
@@ -410,8 +385,7 @@ static void frame(void) {
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
     sg_apply_pipeline(state.pip);
     sg_apply_bindings(&state.bind);
-    sg_range params_range = SG_RANGE(vs_params);
-    sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &params_range);
+    sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, SG_RANGE(vs_params));
     sg_draw(0, 36, 1);
 
     sg_end_pass();
