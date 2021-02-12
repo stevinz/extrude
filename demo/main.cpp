@@ -225,8 +225,8 @@ void init(void) {
         // ********** NOTE: About loading images with Emscripten **********
         //  When running html on local machine, must disable CORS in broswer
         //  On Safari, with 'Develop' menu enabled select "Disable Cross-Origin Restrictions"
-        image_file = "http://github.com/stevinz/extrude/blob/master/assets/shapes.png?raw=true";
-        //image_file = "shapes.png";
+        //image_file = "http://github.com/stevinz/extrude/blob/master/assets/shapes.png?raw=true";
+        image_file = "assets/shapes.png";
     #endif
 
     sfetch_request_t (sokol_fetch_response) {

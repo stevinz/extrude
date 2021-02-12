@@ -15,7 +15,7 @@ set(ExportTarget "web")
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name
-project(Extrude)
+project(extrude)
 
 # glob the files, add the executable
 file(GLOB extrude_SRC 
@@ -27,7 +27,7 @@ file(GLOB extrude_SRC
     "src/3rd_party/*.c**"
     "src/types/*.c**"
 )
-add_executable(Extrude ${extrude_SRC})
+add_executable(extrude ${extrude_SRC})
 
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -77,13 +77,13 @@ if (ExportTarget MATCHES "mac")
     message(${METAL_LIBRARY})
     message(${METALKIT_LIBRARY})
     message(${AUDIOKIT_LIBRARY})
-    target_link_libraries(Extrude ${COCOA_LIBRARY})
-    target_link_libraries(Extrude ${IOKIT_LIBRARY})
-    target_link_libraries(Extrude ${OPENGL_LIBRARY})
-    target_link_libraries(Extrude ${FOUNDATION_LIBRARY})
-    target_link_libraries(Extrude ${METAL_LIBRARY})
-    target_link_libraries(Extrude ${METALKIT_LIBRARY})
-    target_link_libraries(Extrude ${AUDIOKIT_LIBRARY})
+    target_link_libraries(extrude ${COCOA_LIBRARY})
+    target_link_libraries(extrude ${IOKIT_LIBRARY})
+    target_link_libraries(extrude ${OPENGL_LIBRARY})
+    target_link_libraries(extrude ${FOUNDATION_LIBRARY})
+    target_link_libraries(extrude ${METAL_LIBRARY})
+    target_link_libraries(extrude ${METALKIT_LIBRARY})
+    target_link_libraries(extrude ${AUDIOKIT_LIBRARY})
 
 elseif (ExportTarget MATCHES "web")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 --shell-file ../shell.html")
@@ -92,11 +92,11 @@ elseif (ExportTarget MATCHES "web")
     SET(CMAKE_EXECUTABLE_SUFFIX ".html")
 
     # Copy 'assets' directory to 'build' directory
-    add_custom_command(TARGET Extrude PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/ $<TARGET_FILE_DIR:Extrude>/assets/)
+    add_custom_command(TARGET extrude PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/ $<TARGET_FILE_DIR:extrude>/assets/)
 
-    #set_target_properties(Extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --preload-file assets/shapes.png --preload-file shapes.png")
-    #set_target_properties(Extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --embed-file assets/shapes.png --embed-file shapes.png")
-    set_target_properties(Extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind")
+    #set_target_properties(extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --preload-file assets/shapes.png")
+    #set_target_properties(extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --embed-file assets/shapes.png")
+    set_target_properties(extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind")
 
     # -s WASM=0                         force javascript or
     # -s WASM=1                         use webassembly
