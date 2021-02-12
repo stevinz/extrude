@@ -31,8 +31,6 @@
 #include <list>
 #include <set>
 
-#include "../compare.h"
-
 // Type Definitions
 typedef double tppl_float;
 
@@ -90,11 +88,11 @@ struct TPPLPoint {
     ///}
 
     bool operator==(const TPPLPoint& p) const {
-        if (Dr::IsCloseTo(x, p.x, 0.0001) && Dr::IsCloseTo(y, p.y, 0.0001)) return true;
+        if (x == p.x && y == p.y) return true;
         else return false;
     }
     bool operator!=(const TPPLPoint& p) const {
-        if (Dr::IsCloseTo(x, p.x, 0.0001) && Dr::IsCloseTo(y, p.y, 0.0001)) return false;
+        if (x == p.x && y == p.y) return false;
         else return true;
     }
 };

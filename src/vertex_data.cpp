@@ -7,6 +7,8 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
+#include <iostream>
+
 #include "3rd_party/handmade_math.h"
 #include "compare.h"
 #include "types/vec2.h"
@@ -18,6 +20,32 @@
 //##    Constructor
 //####################################################################################
 DrEngineVertexData::DrEngineVertexData() { }
+
+
+//####################################################################################
+//##    Adds a Vertex, including:
+//##        Vec3 Position
+//##        Vec3 Normal
+//##        Vec2 UV Texture Coordinates
+//##        Vec3 Barycentric Coordinates (gives shader a number between 0.0 and 1.0 to lerp to)
+//####################################################################################
+void DrEngineVertexData::add(const DrVec3 &vertex, const DrVec3 &normal, const DrVec2 &text_coord, Triangle_Point point_number) {
+    vertex_t v;
+    v.x =  vertex.x;
+    v.y =  vertex.y;
+    v.z =  vertex.z;
+    v.n1 = normal.x;
+    v.n2 = normal.y;
+    v.n3 = normal.z;
+    v.u =  Dr::Clamp(static_cast<int>(text_coord.x * c_text_multi), 0, 32767);
+    v.v =  Dr::Clamp(static_cast<int>(text_coord.y * c_text_multi), 0, 32767);
+    switch (point_number) {
+        case Triangle_Point::Point1:    v.b1 = 1;   v.b2 = 0;   v.b3 = 0;   break;
+        case Triangle_Point::Point2:    v.b1 = 0;   v.b2 = 1;   v.b3 = 0;   break;
+        case Triangle_Point::Point3:    v.b1 = 0;   v.b2 = 0;   v.b3 = 1;   break;
+    }
+    m_vertices.push_back(v);
+}
 
 
 //####################################################################################
@@ -164,32 +192,6 @@ void DrEngineVertexData::initializeTextureCone(int size) {
 
 
 //####################################################################################
-//##    Adds a Vertex, including:
-//##        Vec3 Position
-//##        Vec3 Normal
-//##        Vec2 UV Texture Coordinates
-//##        Vec3 Barycentric Coordinates (gives shader a number between 0.0 and 1.0 to lerp to)
-//####################################################################################
-void DrEngineVertexData::add(const DrVec3 &vertex, const DrVec3 &normal, const DrVec2 &text_coord, Triangle_Point point_number) {
-    vertex_t v;
-    v.x =  vertex.x;
-    v.y =  vertex.y;
-    v.z =  vertex.z;
-    v.n1 = normal.x;
-    v.n2 = normal.y;
-    v.n3 = normal.z;
-    v.u =  text_coord.x;
-    v.v =  text_coord.y;
-    switch (point_number) {
-        case Triangle_Point::Point1:    v.b1 = 1;   v.b2 = 0;   v.b3 = 0;   break;
-        case Triangle_Point::Point2:    v.b1 = 0;   v.b2 = 1;   v.b3 = 0;   break;
-        case Triangle_Point::Point3:    v.b1 = 0;   v.b2 = 0;   v.b3 = 1;   break;
-    }
-    m_vertices.push_back(v);
-}
-
-
-//####################################################################################
 //##    Adds a Cube, as 3 pairs (six sides) of front and back
 //####################################################################################
 void DrEngineVertexData::cube(float x1, float y1, float tx1, float ty1,
@@ -287,15 +289,17 @@ void DrEngineVertexData::triangle(float x1, float y1, float tx1, float ty1,
     DrVec3 n;
     n = DrVec3::triangleNormal(DrVec3(x1, y1, 0.f), DrVec3(x3, y3, 0.f), DrVec3(x2, y2, 0.f));
 
-    add(DrVec3(x1, y1, +c_extrude_depth), n, DrVec2(tx1, ty1), Triangle_Point::Point1);
-    add(DrVec3(x2, y2, +c_extrude_depth), n, DrVec2(tx2, ty2), Triangle_Point::Point2);
-    add(DrVec3(x3, y3, +c_extrude_depth), n, DrVec2(tx3, ty3), Triangle_Point::Point3);
+    float depth = c_extrude_depth * 50.0f;
+
+    add(DrVec3(x1, y1, +depth), n, DrVec2(tx1, ty1), Triangle_Point::Point1);
+    add(DrVec3(x2, y2, +depth), n, DrVec2(tx2, ty2), Triangle_Point::Point2);
+    add(DrVec3(x3, y3, +depth), n, DrVec2(tx3, ty3), Triangle_Point::Point3);
 
     n = DrVec3::triangleNormal(DrVec3(x1, y1, 0.f), DrVec3(x2, y2, 0.f), DrVec3(x3, y3, 0.f));
 
-    add(DrVec3(x1, y1, -c_extrude_depth), n, DrVec2(tx1, ty1), Triangle_Point::Point1);
-    add(DrVec3(x3, y3, -c_extrude_depth), n, DrVec2(tx3, ty3), Triangle_Point::Point2);
-    add(DrVec3(x2, y2, -c_extrude_depth), n, DrVec2(tx2, ty2), Triangle_Point::Point3);
+    add(DrVec3(x1, y1, -depth), n, DrVec2(tx1, ty1), Triangle_Point::Point1);
+    add(DrVec3(x3, y3, -depth), n, DrVec2(tx3, ty3), Triangle_Point::Point2);
+    add(DrVec3(x2, y2, -depth), n, DrVec2(tx2, ty2), Triangle_Point::Point3);
 }
 
 
@@ -304,9 +308,11 @@ void DrEngineVertexData::triangle(float x1, float y1, float tx1, float ty1,
 //####################################################################################
 void DrEngineVertexData::extrude(float x1, float y1, float tx1, float ty1,
                                  float x2, float y2, float tx2, float ty2, int steps) {
-    float step = (c_extrude_depth * 2.0f) / static_cast<float>(steps);
-    float front = c_extrude_depth;
-    float back =  c_extrude_depth - step;
+    float depth = c_extrude_depth * 50.0f;
+    
+    float step = (depth * 2.0f) / static_cast<float>(steps);
+    float front = depth;
+    float back =  depth - step;
 
     for (int i = 0; i < steps; i++) {
         DrVec3 n;

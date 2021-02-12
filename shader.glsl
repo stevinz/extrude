@@ -41,8 +41,32 @@ out vec4 frag_color;
 void main() {
     vec4 norm = vec4(0.0, vert_normal * 0.0);
     vec4 bary = vec4(0.0, vert_bary * 0.0);
+       
+    // ***** Color from texture
+    frag_color = texture(tex, uv);
+    vec3  frag_rgb = frag_color.rgb;
+    float frag_a   = frag_color.a;
 
-    frag_color = texture(tex, uv) + norm + bary;
+
+    // ***** Wireframe
+    //if (wireframe) {
+        float wireframe_percent = 0.2;
+        float width = 1.0;
+
+        vec3  d = fwidth(vert_bary);
+        vec3  a3 = smoothstep(vec3(0.0), d * width, vert_bary);
+        float wire = min(min(a3.x, a3.y), a3.z);
+
+        frag_color *= (1.0 - wire);
+
+        // If not on edge, draw texture faded, or just maybe just discard
+        if (all(lessThan(frag_color, vec4(0.02)))) {
+            // Texture is slightly there
+            frag_color = vec4(frag_rgb * 0.15, 0.15) * frag_a;
+        }
+    // }
+
+    
 }
 @end
 

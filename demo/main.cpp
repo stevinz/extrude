@@ -121,7 +121,7 @@ void init(void) {
         // pos                  normals                uvs          barycentric (wireframe)
         {  1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f,      1,   1,      1.0f, 1.0f, 1.0f },
         {  0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f,      0,   1,      1.0f, 1.0f, 1.0f },
-        {  1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f,      1,   0,      1.0f, 1.0f, 1.0f },
+        {  1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f,      1,   0,      1.0f, 1.0f, 1.0f },      
     };
     sg_buffer_desc (sokol_buffer_vertex) {
         .data = SG_RANGE(vertices),
@@ -137,7 +137,7 @@ void init(void) {
             .attrs = {
                 [ATTR_vs_pos].format = SG_VERTEXFORMAT_FLOAT3,
                 [ATTR_vs_norm].format = SG_VERTEXFORMAT_FLOAT3,
-                [ATTR_vs_texcoord0].format = SG_VERTEXFORMAT_FLOAT2,
+                [ATTR_vs_texcoord0].format = SG_VERTEXFORMAT_SHORT2N,
                 [ATTR_vs_bary].format = SG_VERTEXFORMAT_FLOAT3,
             }
         },
@@ -221,22 +221,25 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         // ********** Create 3D extrusion
         DrEngineVertexData *texture_data = new DrEngineVertexData();
         bool wireframe = false;
-        //texture_data->initializeExtrudedImage(image, wireframe);
+        texture_data->initializeExtrudedImage(image, wireframe);
         //texture_data->initializeTextureQuad(image_size);
         //texture_data->initializeTextureCube(image_size);
-        texture_data->initializeTextureCone(image_size);
+        //texture_data->initializeTextureCone(image_size);
         
         // ********** Copy vertex data and set into state buffer
-        std::cout << "Vertex count: " << texture_data->count() << std::endl;
-        if (texture_data->count() > 0) {
-            vertex_t vertices[texture_data->count()];
-            for (size_t i = 0; i < texture_data->count(); i++) {
+        std::cout << "Triangle count: " << texture_data->triangleCount() << std::endl;
+        if (texture_data->vertexCount() > 0) {
+            vertex_t vertices[texture_data->vertexCount()];
+            for (size_t i = 0; i < texture_data->vertexCount(); i++) {
                 vertices[i] = texture_data->vertices()[i];
             }
             sg_buffer_desc (sokol_buffer_vertex) {
                 .data = SG_RANGE(vertices),
                 .label = "extruded-vertices"
             };
+            std::cout << "Sizeof: " << sokol_buffer_vertex.data.size << std::endl;
+
+            sg_destroy_buffer(state.bind.vertex_buffers[0]);
             state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
         }
         

@@ -32,11 +32,14 @@ typedef std::map<DrVec3, std::vector<Vertex>> NeighborMap;
 const int   c_vertex_length = 11;
 const float c_extrude_depth = 0.5f;
 
+// Texture coordinate multiplier from float range (0.0 to 1.0) to int range (0 to 32767)
+const int   c_text_multi = 32767;       
+
 // Vertex Declaration (11 total data points)
 typedef struct {
     float x, y, z;          // Position
     float n1, n2, n3;       // Normal
-    float u, v;             // Texture Coordinate
+    int16_t u, v;           // Texture Coordinate
     float b1, b2, b3;       // Barycentric coordinate (used for wireframe rendering)
 } vertex_t;
 
@@ -61,7 +64,7 @@ enum class Triangle_Point {
 class DrEngineVertexData
 {
 private:
-    std::vector<vertex_t>   m_vertices;
+    std::vector<vertex_t> m_vertices;
 
 public:
     // Constructor
@@ -69,9 +72,8 @@ public:
 
     // Properties
     vertex_t       *vertices()              { return m_vertices.data(); }
-    int             count() const           { return m_vertices.size(); }
     int             triangleCount() const   { return vertexCount() / 3; }
-    int             vertexCount() const     { return count(); }
+    int             vertexCount() const     { return m_vertices.size(); }
 
     // Creation Functions
     void    initializeExtrudedImage(DrImage *image, bool wireframe = true);
