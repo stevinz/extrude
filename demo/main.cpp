@@ -215,13 +215,17 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         //bitmap = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, bitmap, Dr::RandomInt(-100, 100));
         DrImage *image = new DrImage("shapes", bitmap);
 
+        // Set new camera eye position based on image size
+        image_size = Dr::Max(image->getBitmap().width, image->getBitmap().height);      
+
         // ********** Create 3D extrusion
         DrEngineVertexData *texture_data = new DrEngineVertexData();
         bool wireframe = false;
         //texture_data->initializeExtrudedImage(image, wireframe);
-        //texture_data->initializeTextureQuad();
-        texture_data->initializeTextureCube();
-
+        //texture_data->initializeTextureQuad(image_size);
+        //texture_data->initializeTextureCube(image_size);
+        texture_data->initializeTextureCone(image_size);
+        
         // ********** Copy vertex data and set into state buffer
         std::cout << "Vertex count: " << texture_data->count() << std::endl;
         if (texture_data->count() > 0) {
@@ -249,9 +253,6 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
             }
         };
         
-        // Set new camera eye position based on image size
-        image_size = Dr::Max(image->getBitmap().width, image->getBitmap().height);      
-
         // If we already have an image in the state buffer, uninit before initializing new image
         if (initialized_image == true) { sg_uninit_image(state.bind.fs_images[SLOT_tex]); }
 
@@ -371,7 +372,7 @@ static void frame(void) {
 
     // ***** Compute model-view-projection matrix for vertex shader
     hmm_mat4 proj = HMM_Perspective(60.0f, (float)sapp_width()/(float)sapp_height(), 0.01f, 1000.0f);
-    hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, image_size * 1.5f), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
+    hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, image_size * 1.75f), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
     hmm_mat4 view_proj = HMM_MultiplyMat4(proj, view);
     vs_params_t vs_params;
     state.rx += 1.0f; 

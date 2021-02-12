@@ -23,9 +23,9 @@ DrEngineVertexData::DrEngineVertexData() { }
 //####################################################################################
 //##    Builds a Textured Quad
 //####################################################################################
-void DrEngineVertexData::initializeTextureQuad() {
-    int   width =  1;
-    int   height = 1;
+void DrEngineVertexData::initializeTextureQuad(int size) {
+    int   width =  size;
+    int   height = size;
     float w2 = width  / 2.f;
     float h2 = height / 2.f;
 
@@ -54,11 +54,12 @@ void DrEngineVertexData::initializeTextureQuad() {
 //####################################################################################
 //##    Builds a Textured Cube
 //####################################################################################
-void DrEngineVertexData::initializeTextureCube() {
-    int   width =  1;
-    int   height = 1;
+void DrEngineVertexData::initializeTextureCube(int size) {
+    int   width =  size;
+    int   height = size;
     float w2 = width  / 2.f;
     float h2 = height / 2.f;
+    float depth = size * c_extrude_depth;
 
     // EXAMPLE: Adding Triangles
     float x1 = +w2, y1 = +h2;                   // Top Right
@@ -74,18 +75,19 @@ void DrEngineVertexData::initializeTextureCube() {
     cube( x1,  y1,  tx1, ty1,
           x2,  y2,  tx2, ty2,
           x3,  y3,  tx3, ty3,
-          x4,  y4,  tx4, ty4);
+          x4,  y4,  tx4, ty4, depth);
 }
 
 
 //####################################################################################
 //##    Builds a Textured Spike (eventually cone)
 //####################################################################################
-void DrEngineVertexData::initializeTextureCone() {
-    int   width =  1;
-    int   height = 1;
+void DrEngineVertexData::initializeTextureCone(int size) {
+    int   width =  size;
+    int   height = size;
     float w2 = width  / 2.f;
     float h2 = height / 2.f;
+    float depth = size * c_extrude_depth;
 
     // EXAMPLE: Adding Triangles
     float x1,   y1,  x2,  y2,  x3,  y3,  x4,  y4;
@@ -101,8 +103,8 @@ void DrEngineVertexData::initializeTextureCone() {
 
     DrVec3 n = DrVec3::triangleNormal(DrVec3(x1, y1, 0.f), DrVec3(x3, y3, 0.f), DrVec3(x2, y2, 0.f));
     DrVec3 point_t( x1, y1,              0.f);
-    DrVec3 point_bl(x2, y2, +c_extrude_depth);
-    DrVec3 point_br(x3, y3, +c_extrude_depth);
+    DrVec3 point_bl(x2, y2, depth);
+    DrVec3 point_br(x3, y3, depth);
 
     hmm_m4 rotate = Dr::IdentityMatrix();
 
@@ -139,10 +141,10 @@ void DrEngineVertexData::initializeTextureCone() {
     DrVec3  p1f, p2f, p3f, p4f;                 // Point 1 Front, etc
 
     nf = DrVec3::triangleNormal(DrVec3(x1, y1, 0.f), DrVec3(x3, y3, 0.f), DrVec3(x2, y2, 0.f));
-    p1f = DrVec3(x1, y1, +c_extrude_depth);
-    p2f = DrVec3(x2, y2, +c_extrude_depth);
-    p3f = DrVec3(x3, y3, +c_extrude_depth);
-    p4f = DrVec3(x4, y4, +c_extrude_depth);
+    p1f = DrVec3(x1, y1, depth);
+    p2f = DrVec3(x2, y2, depth);
+    p3f = DrVec3(x3, y3, depth);
+    p4f = DrVec3(x4, y4, depth);
 
     rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(90.f, { 1.0, 0.0, 0.0 }));             // Angle is in degrees
 
@@ -193,7 +195,7 @@ void DrEngineVertexData::add(const DrVec3 &vertex, const DrVec3 &normal, const D
 void DrEngineVertexData::cube(float x1, float y1, float tx1, float ty1,
                               float x2, float y2, float tx2, float ty2,
                               float x3, float y3, float tx3, float ty3,
-                              float x4, float y4, float tx4, float ty4) {
+                              float x4, float y4, float tx4, float ty4, float depth) {
     hmm_m4 rotate = Dr::IdentityMatrix();
     DrVec3 nf, nb;                                   // Normal Front, Normal Back
     DrVec3 p1f, p2f, p3f, p4f;                       // Point 1 Front, etc
@@ -202,14 +204,14 @@ void DrEngineVertexData::cube(float x1, float y1, float tx1, float ty1,
     for (int i = 0; i <= 2; ++i) {
         nf = DrVec3::triangleNormal(DrVec3(x1, y1, 0.f), DrVec3(x3, y3, 0.f), DrVec3(x2, y2, 0.f));
         nb = DrVec3::triangleNormal(DrVec3(x1, y1, 0.f), DrVec3(x2, y2, 0.f), DrVec3(x3, y3, 0.f));
-        p1f = DrVec3(x1, y1, +c_extrude_depth);
-        p2f = DrVec3(x2, y2, +c_extrude_depth);
-        p3f = DrVec3(x3, y3, +c_extrude_depth);
-        p4f = DrVec3(x4, y4, +c_extrude_depth);
-        p1b = DrVec3(x1, y1, -c_extrude_depth);
-        p2b = DrVec3(x2, y2, -c_extrude_depth);
-        p3b = DrVec3(x3, y3, -c_extrude_depth);
-        p4b = DrVec3(x4, y4, -c_extrude_depth);
+        p1f = DrVec3(x1, y1, +depth);
+        p2f = DrVec3(x2, y2, +depth);
+        p3f = DrVec3(x3, y3, +depth);
+        p4f = DrVec3(x4, y4, +depth);
+        p1b = DrVec3(x1, y1, -depth);
+        p2b = DrVec3(x2, y2, -depth);
+        p3b = DrVec3(x3, y3, -depth);
+        p4b = DrVec3(x4, y4, -depth);
 
         if (i == 1) {
             rotate = HMM_MultiplyMat4(rotate, HMM_Rotate(90.f, { 0.0, 1.0, 0.0 }));         // Angle is in degrees

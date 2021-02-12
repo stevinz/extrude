@@ -68,17 +68,17 @@ public:
     DrEngineVertexData();
 
     // Properties
-    vertex_t       *vertices() {            return m_vertices.data(); }
-    int             count() const {         return m_vertices.size(); }
-    int             triangleCount() const { return vertexCount() / 3; }
-    int             vertexCount() const {   return count(); }
+    vertex_t       *vertices()              { return m_vertices.data(); }
+    int             count() const           { return m_vertices.size(); }
+    int             triangleCount() const   { return vertexCount() / 3; }
+    int             vertexCount() const     { return count(); }
 
     // Creation Functions
     void    initializeExtrudedImage(DrImage *image, bool wireframe = true);
 
-    void    initializeTextureCone();
-    void    initializeTextureCube();
-    void    initializeTextureQuad();
+    void    initializeTextureCone(int size);
+    void    initializeTextureCube(int size);
+    void    initializeTextureQuad(int size);
 
 
     // Helper Functions
@@ -98,7 +98,7 @@ public:
     void    cube(float x1, float y1, float tx1, float ty1,
                  float x2, float y2, float tx2, float ty2,
                  float x3, float y3, float tx3, float ty3,
-                 float x4, float y4, float tx4, float ty4);
+                 float x4, float y4, float tx4, float ty4, float depth);
     void    quad(float x1, float y1, float tx1, float ty1,
                  float x2, float y2, float tx2, float ty2,
                  float x3, float y3, float tx3, float ty3,
