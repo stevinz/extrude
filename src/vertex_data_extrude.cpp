@@ -28,8 +28,6 @@
 //####################################################################################
 void DrEngineVertexData::initializeExtrudedImage(DrImage *image, bool wireframe) {
 
-    std::cout << "Extruding polygons: " << static_cast<int>(image->m_poly_list.size()) << std::endl;
-
     for (int poly_number = 0; poly_number < static_cast<int>(image->m_poly_list.size()); poly_number++) {
         if (image->getBitmap().width < 1 || image->getBitmap().height < 1) continue;
 
@@ -38,9 +36,9 @@ void DrEngineVertexData::initializeExtrudedImage(DrImage *image, bool wireframe)
         std::vector<std::vector<DrPointF>> &hole_list = image->m_hole_list[poly_number];
 
         double alpha_tolerance = (image->m_outline_processed) ? c_alpha_tolerance : 0.0;
-        triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Ear_Clipping, alpha_tolerance);
+        //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Ear_Clipping, alpha_tolerance);
         //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Monotone, alpha_tolerance);
-        //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Delaunay, alpha_tolerance);
+        triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Delaunay, alpha_tolerance);
 
         // ***** Add extruded triangles from Hull and Holes
         int slices = wireframe ? 2 : 1;
@@ -49,7 +47,6 @@ void DrEngineVertexData::initializeExtrudedImage(DrImage *image, bool wireframe)
             extrudeFacePolygon(hole, image->getBitmap().width, image->getBitmap().height, slices);
         }
     }
-
 }
 
 
@@ -250,12 +247,12 @@ void DrEngineVertexData::triangulateFace(const std::vector<DrPointF> &outline_po
             float x3 = static_cast<float>(         poly[2].x - w2d);
             float y3 = static_cast<float>(height - poly[2].y - h2d);
 
-            float tx1 = static_cast<float>(      (poly[0].x / static_cast<double>(width)));
-            float ty1 = static_cast<float>(1.0 - (poly[0].y / static_cast<double>(height)));
-            float tx2 = static_cast<float>(      (poly[1].x / static_cast<double>(width)));
-            float ty2 = static_cast<float>(1.0 - (poly[1].y / static_cast<double>(height)));
-            float tx3 = static_cast<float>(      (poly[2].x / static_cast<double>(width)));
-            float ty3 = static_cast<float>(1.0 - (poly[2].y / static_cast<double>(height)));
+            float tx1 = static_cast<float>(poly[0].x / static_cast<double>(width));
+            float ty1 = static_cast<float>(poly[0].y / static_cast<double>(height));
+            float tx2 = static_cast<float>(poly[1].x / static_cast<double>(width));
+            float ty2 = static_cast<float>(poly[1].y / static_cast<double>(height));
+            float tx3 = static_cast<float>(poly[2].x / static_cast<double>(width));
+            float ty3 = static_cast<float>(poly[2].y / static_cast<double>(height));
 
             triangle( x1, y1, tx1, ty1,
                       x3, y3, tx3, ty3,
@@ -290,15 +287,30 @@ void DrEngineVertexData::triangulateFace(const std::vector<DrPointF> &outline_po
         // Add some uniform points, 4 points looks great and keeps triangles low
         if (wireframe) {
             int x_add, y_add;
-            x_add = width /  4;
-            y_add = height / 4;
+            x_add = Dr::Min(10, width  / 20);
+            y_add = Dr::Min(10, height / 20);
             if (x_add < 1) x_add = 1;
             if (y_add < 1) y_add = 1;
             for (int i = (x_add / 2); i < width; i += x_add) {
                 for (int j = (y_add / 2); j < height; j += y_add) {
-                    if (image.getPixel(i, j).alphaF() >= alpha_tolerance) {
-                        coords.push_back( i );
-                        coords.push_back( j );
+
+                    // Scan a grid around point to see if close to border
+                    int x_start = i - x_add; if (x_start < 0) x_start = 0;
+                    int x_end   = i + x_add; if (x_end > width - 1) x_end = width - 1;
+                    int y_start = j - y_add; if (y_start < 0) y_start = 0;
+                    int y_end   = j + y_add; if (y_end > height - 1) y_end = height - 1;
+                    float total = 0, solid = 0;
+                    for (int x = x_start; x <= x_end; x++) {
+                        for (int y = y_start; y <= y_end; y++) {
+                            if (image.getPixel(x, y).alphaF() >= alpha_tolerance) solid++;
+                            total++;
+                        }
+                    }
+
+                    float percent_solid = solid / total;
+                    if ((image.getPixel(i, j).alphaF() >= alpha_tolerance) && (solid != total)) {
+                        coords.push_back(i);
+                        coords.push_back(j);
                     }
                 }
             }
@@ -351,7 +363,7 @@ void DrEngineVertexData::triangulateFace(const std::vector<DrPointF> &outline_po
 
             // Check average of triangle lines and centroid for transparent pixels
             double transparent_average = 0;
-            transparent_average += averageTransparentPixels(image, mid12, alpha_tolerance);;
+            transparent_average += averageTransparentPixels(image, mid12, alpha_tolerance);
             transparent_average += averageTransparentPixels(image, mid23, alpha_tolerance);
             transparent_average += averageTransparentPixels(image, mid13, alpha_tolerance);
             transparent_average += avg_c;
@@ -366,11 +378,11 @@ void DrEngineVertexData::triangulateFace(const std::vector<DrPointF> &outline_po
             float iy3 = static_cast<float>(height - y3 - h2d);
 
             float tx1 = static_cast<float>(      x1 / width);
-            float ty1 = static_cast<float>(1.0 - y1 / height);
+            float ty1 = static_cast<float>(      y1 / height);
             float tx2 = static_cast<float>(      x2 / width);
-            float ty2 = static_cast<float>(1.0 - y2 / height);
+            float ty2 = static_cast<float>(      y2 / height);
             float tx3 = static_cast<float>(      x3 / width);
-            float ty3 = static_cast<float>(1.0 - y3 / height);
+            float ty3 = static_cast<float>(      y3 / height);
 
             triangle( ix1, iy1, tx1, ty1,
                       ix2, iy2, tx2, ty2,
@@ -398,12 +410,12 @@ void DrEngineVertexData::extrudeFacePolygon(const std::vector<DrPointF> &outline
         float  x1 = static_cast<float>(         outline_points[point1].x);
         float  y1 = static_cast<float>(height - outline_points[point1].y);
         float tx1 = static_cast<float>(         outline_points[point1].x / width);
-        float ty1 = static_cast<float>(1.0 -    outline_points[point1].y / height);
+        float ty1 = static_cast<float>(         outline_points[point1].y / height);
 
         float  x2 = static_cast<float>(         outline_points[point2].x);
         float  y2 = static_cast<float>(height - outline_points[point2].y);
         float tx2 = static_cast<float>(         outline_points[point2].x / width);
-        float ty2 = static_cast<float>(1.0 -    outline_points[point2].y / height);
+        float ty2 = static_cast<float>(         outline_points[point2].y / height);
 
         x1 -= static_cast<float>(w2d);
         x2 -= static_cast<float>(w2d);

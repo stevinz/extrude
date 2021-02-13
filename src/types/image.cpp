@@ -154,7 +154,7 @@ void DrImage::autoOutlinePoints() {
 
             // Optimize point list
             if (one_hole.size() > (c_neighbors * 2)) {
-                one_hole = DrEngineVertexData::smoothPoints(one_hole, c_neighbors, 50.0, 1.0);
+                one_hole = DrEngineVertexData::smoothPoints(one_hole, c_neighbors, 30.0, 1.0);
                 one_hole = PolylineSimplification::RamerDouglasPeucker(one_hole, 0.1);
                 one_hole = DrEngineVertexData::insertPoints(one_hole);
             }
