@@ -2,7 +2,7 @@
 
 Extrudes an image into an 3D model in c++ with no external dependencies. Sample VS Code project that uses the single file sokol libraries for rendering the extruded model.
 
-asm.js.wasm live demo: https://stevinz.github.io/extrude-html5/
+asm.js/wasm live demo: https://stevinz.github.io/extrude-html5/
 
 ## How it works:
 
@@ -18,5 +18,6 @@ TODO
 
 ## Also thanks to these libraries used for the demo:
 
+- Fontstash: https://github.com/memononen/fontstash
 - Sokol: https://github.com/floooh/sokol
 - Whereami: https://github.com/gpakosz/whereami

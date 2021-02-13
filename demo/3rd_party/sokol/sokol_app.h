@@ -3027,7 +3027,7 @@ _SOKOL_PRIVATE void _sapp_macos_frame(void) {
         _sapp.macos.view.autoResizeDrawable = false;
         _sapp.macos.window.contentView = _sapp.macos.view;
         [_sapp.macos.window makeFirstResponder:_sapp.macos.view];
-        _sapp.macos.view.layer.magnificationFilter = kCAFilterNearest;
+        //_sapp.macos.view.layer.magnificationFilter = kCAFilterNearest;
     #elif defined(SOKOL_GLCORE33)
         NSOpenGLPixelFormatAttribute attrs[32];
         int i = 0;

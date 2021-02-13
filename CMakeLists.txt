@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.10)
 project(extrude)
 
 # glob the files, add the executable
-file(GLOB extrude_SRC 
+file(GLOB SOURCE_CODE_FILES 
     "demo/*.c**"
     "demo/3rd_party/*.c**"
     "demo/3rd_party/sokol/*.c**"
@@ -27,15 +27,20 @@ file(GLOB extrude_SRC
     "src/3rd_party/*.c**"
     "src/types/*.c**"
 )
-add_executable(extrude ${extrude_SRC})
+add_executable(${PROJECT_NAME} ${SOURCE_CODE_FILES})
 
 
+# compile Shaders
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     execute_process (
        COMMAND ./sokol-shdc -i shader.glsl -o demo/shader.glsl.h -l glsl330:glsl100:metal_macos
        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
+
+
+# copy 'assets' directory to 'build' directory
+add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/ $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets/)
 
 
 ##################################################################
@@ -77,13 +82,13 @@ if (ExportTarget MATCHES "mac")
     message(${METAL_LIBRARY})
     message(${METALKIT_LIBRARY})
     message(${AUDIOKIT_LIBRARY})
-    target_link_libraries(extrude ${COCOA_LIBRARY})
-    target_link_libraries(extrude ${IOKIT_LIBRARY})
-    target_link_libraries(extrude ${OPENGL_LIBRARY})
-    target_link_libraries(extrude ${FOUNDATION_LIBRARY})
-    target_link_libraries(extrude ${METAL_LIBRARY})
-    target_link_libraries(extrude ${METALKIT_LIBRARY})
-    target_link_libraries(extrude ${AUDIOKIT_LIBRARY})
+    target_link_libraries(${PROJECT_NAME} ${COCOA_LIBRARY})
+    target_link_libraries(${PROJECT_NAME} ${IOKIT_LIBRARY})
+    target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARY})
+    target_link_libraries(${PROJECT_NAME} ${FOUNDATION_LIBRARY})
+    target_link_libraries(${PROJECT_NAME} ${METAL_LIBRARY})
+    target_link_libraries(${PROJECT_NAME} ${METALKIT_LIBRARY})
+    target_link_libraries(${PROJECT_NAME} ${AUDIOKIT_LIBRARY})
 
 elseif (ExportTarget MATCHES "web")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 --shell-file ../shell.html")
@@ -91,12 +96,9 @@ elseif (ExportTarget MATCHES "web")
     set(CMAKE_CXX_COMPILER "emcc")
     SET(CMAKE_EXECUTABLE_SUFFIX ".html")
 
-    # Copy 'assets' directory to 'build' directory
-    add_custom_command(TARGET extrude PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/ $<TARGET_FILE_DIR:extrude>/assets/)
-
-    #set_target_properties(extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --preload-file assets/shapes.png")
-    #set_target_properties(extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --embed-file assets/shapes.png")
-    set_target_properties(extrude PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind")
+    #set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --preload-file assets/shapes.png")
+    #set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --embed-file assets/shapes.png")
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind")
 
     # -s WASM=0                         force javascript or
     # -s WASM=1                         use webassembly

@@ -25,10 +25,13 @@
 
 #include "3rd_party/sokol/sokol_app.h"
 #include "3rd_party/sokol/sokol_gfx.h"
+#include "3rd_party/sokol/sokol_gl.h"
 #include "3rd_party/sokol/sokol_glue.h"
 #include "3rd_party/sokol/sokol_time.h"
 #include "3rd_party/sokol/sokol_audio.h"
 #include "3rd_party/sokol/sokol_fetch.h"
+#include "3rd_party/fontstash.h"
+#include "3rd_party/sokol/sokol_fontstash.h"
 #ifndef __EMSCRIPTEN__
     #include "3rd_party/wai/whereami.c"
 #endif
@@ -37,7 +40,7 @@
 
 
 //################################################################################
-//##    Local Structs / Defines
+//##    Local Structs / Defines / Globals
 //################################################################################
 #define MAX_FILE_SIZE (2048 * 2048)
 
@@ -48,21 +51,48 @@ typedef enum {
     LOADSTATE_FILE_TOO_BIG,
 } loadstate_t;
 
-static struct {
+typedef struct {
+    // Gfx
     float rx, ry;
     sg_pass_action pass_action;
     sg_pipeline pip;
     sg_bindings bind;
-    loadstate_t load_state;
-    uint32_t size;
+
+    // Fetch / Drop
     uint8_t file_buffer[MAX_FILE_SIZE];
-} state;
+    loadstate_t load_state;
+        
+    // Font
+    FONScontext* fons;
+    float dpi_scale;
+    int font_normal;
+    uint8_t font_normal_data[MAX_FILE_SIZE];
+} state_t;
 
-static void fetch_callback(const sfetch_response_t*);
-
+// ########## Globals
+DrEngineVertexData *texture_data = nullptr;
+static state_t state;
 bool initialized_image = false;
 int  image_size = 1;
 int  image_vertices = 3;
+
+
+//################################################################################
+//##    Sokol-fetch load callbacks 
+//################################################################################
+static void image_loaded(const sfetch_response_t*);
+static void font_normal_loaded(const sfetch_response_t* response) {
+    if (response->fetched) {
+        state.font_normal = fonsAddFontMem(state.fons, "sans", (unsigned char*)response->buffer_ptr, (int)response->fetched_size,  false);
+    } 
+}
+
+// Round to next power of 2 (see bit-twiddling-hacks)
+static int round_pow2(float v) {
+    uint32_t vi = ((uint32_t) v) - 1;
+    for (uint32_t i = 0; i < 5; i++) { vi |= (vi >> (1<<i)); }
+    return (int) (vi + 1);
+}
 
 
 //################################################################################
@@ -100,12 +130,22 @@ void init(void) {
     };            
     sg_setup(&sokol_gfx);
 
+    // ***** Setup sokol-gl
+    sgl_desc_t (sokol_gl) { 0 };
+    sgl_setup(&sokol_gl);
 
+    // ***** Font Setup, make sure the fontstash atlas width/height is pow-2 
+    state.dpi_scale = sapp_dpi_scale();
+    const int atlas_dim = round_pow2(512.0f * state.dpi_scale);
+    FONScontext* fons_context = sfons_create(atlas_dim, atlas_dim, FONS_ZERO_TOPLEFT);
+    state.fons = fons_context;
+    state.font_normal = FONS_INVALID;
+    
     // ***** Setup sokol-fetch (for loading files) with the minimal "resource limits"
     sfetch_desc_t (sokol_fetch) {
         .max_requests = 4,
         .num_channels = 2,
-        .num_lanes = 1
+        .num_lanes = 2
     };
     sfetch_setup(&sokol_fetch);
         
@@ -160,25 +200,27 @@ void init(void) {
     //  Any draw calls containing such an "incomplete" image handle will be silently dropped.
     state.bind.fs_images[SLOT_tex] = sg_alloc_image();
 
+
     // ***** Start loading the PNG File
     //  We don't need the returned handle since we can also get that inside the fetch-callback from the response
     //  structure. NOTE: we're not using the user_data member, since all required state is in a global variable anyway
     char* path = NULL;
     int length, dirname_length;
-    std::string image_file = "";
+    std::string image_file = "", font_file = "";
 
     #ifndef __EMSCRIPTEN__
         length = wai_getExecutablePath(NULL, 0, &dirname_length);
         if (length > 0) {
             path = (char*)malloc(length + 1);
             wai_getExecutablePath(path, length, &dirname_length);
-            path[length] = '\0';
-
-            printf("executable path: %s\n", path);
+            //path[length] = '\0';
+            //printf("executable path: %s\n", path);
             path[dirname_length] = '\0';
-            printf("  dirname: %s\n", path);
-            printf("  basename: %s\n", path + dirname_length + 1);
-            image_file = std::strcat(path, "/../assets/shapes.png");
+            //printf("  dirname: %s\n", path);
+            //printf("  basename: %s\n", path + dirname_length + 1);
+            std::string base = path;
+            image_file = base + "/assets/shapes.png";
+            font_file  = base + "/assets/aileron-regular.otf";
             free(path);
         }
     #else        
@@ -187,16 +229,27 @@ void init(void) {
         //  On Safari, with 'Develop' menu enabled select "Disable Cross-Origin Restrictions"
         //image_file = "http://github.com/stevinz/extrude/blob/master/assets/shapes.png?raw=true";
         image_file = "assets/shapes.png";
+        font_file  = "assets/aileron-regular.otf";
     #endif
 
-    sfetch_request_t (sokol_fetch_response) {
+
+    // Load inital "shapes.png" image in background
+    sfetch_request_t (sokol_fetch_image) {
         .path = image_file.c_str(),
-        .callback = fetch_callback,
+        .callback = image_loaded,
         .buffer_ptr = state.file_buffer,
         .buffer_size = sizeof(state.file_buffer)
     };
-    sfetch_send(&sokol_fetch_response);
-    
+    sfetch_send(&sokol_fetch_image);
+
+    // Load font in background
+    sfetch_request_t (sokol_fetch_font) {
+        .path = font_file.c_str(),
+        .callback = font_normal_loaded,
+        .buffer_ptr = state.font_normal_data,
+        .buffer_size = sizeof(state.font_normal_data)
+    };
+    sfetch_send(&sokol_fetch_font);
 }
 
 
@@ -220,7 +273,8 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         image_size = Dr::Max(image->getBitmap().width, image->getBitmap().height);      
 
         // ********** Create 3D extrusion
-        DrEngineVertexData *texture_data = new DrEngineVertexData();
+        if (texture_data != nullptr) delete texture_data;
+        texture_data = new DrEngineVertexData();
         bool wireframe = true;
         texture_data->initializeExtrudedImage(image, wireframe);
         //texture_data->initializeTextureQuad(image_size);
@@ -273,7 +327,7 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
 //################################################################################
 /* The fetch-callback is called by sokol_fetch.h when the data is loaded,
    or when an error has occurred. */
-static void fetch_callback(const sfetch_response_t* response) {
+static void image_loaded(const sfetch_response_t* response) {
     if (response->fetched) {
         // File data has been fetched
         //  Since we provided a big-enough buffer we can be sure that all data has been loaded here
@@ -390,7 +444,6 @@ static void frame(void) {
     vs_params.m =   model;
     vs_params.mvp = HMM_MultiplyMat4(view_proj, model);
     
-
     // ***** Render pass
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
     sg_apply_pipeline(state.pip);
@@ -398,6 +451,35 @@ static void frame(void) {
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, SG_RANGE(vs_params));
     sg_draw(0, image_vertices, 1);
 
+
+    // ***** Text
+    fonsClearState(state.fons);    
+    sgl_defaults();
+    sgl_matrix_mode_projection();
+    sgl_ortho(0.0f, sapp_widthf(), sapp_heightf(), 0.0f, -1.0f, +1.0f);
+
+    const float dpis = state.dpi_scale;
+    FONScontext* fs = state.fons;
+
+    static int draw_font = 0;
+    if (state.font_normal != FONS_INVALID) {
+        fonsSetAlign(fs, FONS_ALIGN_LEFT | FONS_ALIGN_BASELINE);
+        fonsSetFont(fs, state.font_normal);
+        fonsSetSize(fs, 18.0f * dpis);
+        fonsSetColor(fs, sfons_rgba(255, 255, 255, 255));
+        fonsSetBlur(fs, 0);
+        fonsSetSpacing(fs, 0.0f);
+        fonsDrawText(fs, 10 * dpis, 10 * dpis, "Hi there", NULL);
+        if (draw_font == 0) {
+            draw_font = 1;
+            std::cout << "Drawed it!!!";
+        }
+    }
+    sfons_flush(fs);            // Flush fontstash's font atlas to sokol-gfx texture
+    sgl_draw();
+
+
+    // ***** End Rendering
     sg_end_pass();
     sg_commit();
 }
@@ -408,6 +490,8 @@ static void frame(void) {
 //################################################################################
 void cleanup(void) {
     sfetch_shutdown();
+    sfons_destroy(state.fons);
+    sgl_shutdown();
     sg_shutdown();
 }
 
