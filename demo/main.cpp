@@ -70,12 +70,19 @@ typedef struct {
 } state_t;
 
 // ########## Globals
-DrEngineVertexData *texture_data = nullptr;
+// Sokol Variables
 static state_t state;
+
+// Image Variables
+DrEngineVertexData *texture_data = nullptr;
 bool initialized_image = false;
 int  image_size = 1;
 int  image_vertices = 3;
 
+// FPS Variables
+uint64_t time_start = 0;
+long ticks = 0;
+long fps =   0;
 
 //################################################################################
 //##    Sokol-fetch load callbacks 
@@ -134,13 +141,10 @@ void init(void) {
     sgl_desc_t (sokol_gl) { 0 };
     sgl_setup(&sokol_gl);
 
-    // ***** Font Setup, make sure the fontstash atlas width/height is pow-2 
-    state.dpi_scale = sapp_dpi_scale();
-    const int atlas_dim = round_pow2(512.0f * state.dpi_scale);
-    FONScontext* fons_context = sfons_create(atlas_dim, atlas_dim, FONS_ZERO_TOPLEFT);
-    state.fons = fons_context;
-    state.font_normal = FONS_INVALID;
-    
+    // ***** Setup sokol-time
+    stm_setup();
+    time_start = stm_now();
+
     // ***** Setup sokol-fetch (for loading files) with the minimal "resource limits"
     sfetch_desc_t (sokol_fetch) {
         .max_requests = 4,
@@ -148,14 +152,20 @@ void init(void) {
         .num_lanes = 2
     };
     sfetch_setup(&sokol_fetch);
-        
+
+    // ***** Font Setup, make sure the fontstash atlas width/height is pow-2 
+    state.dpi_scale = sapp_dpi_scale();
+    const int atlas_dim = round_pow2(512.0f * state.dpi_scale);
+    FONScontext* fons_context = sfons_create(atlas_dim, atlas_dim, FONS_ZERO_TOPLEFT);
+    state.fons = fons_context;
+    state.font_normal = FONS_INVALID;          
+
 
     // ***** Pass action for clearing the framebuffer to some color
     sg_pass_action (pass_action) {
         .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.125f, 0.25f, 0.35f, 1.0f } }
     };
     state.pass_action = (pass_action);
-
 
     // ***** Starter triangle
     const vertex_t vertices[] = {
@@ -169,7 +179,6 @@ void init(void) {
         .label = "temp-vertices"
     };
     state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
-
 
     // ***** Pipeline State Object, sets 3D device parameters
     sg_pipeline_desc (sokol_pipleine) {
@@ -199,7 +208,6 @@ void init(void) {
     //  but don't actually initialize the image yet, this happens later when the asynchronous file load has finished.
     //  Any draw calls containing such an "incomplete" image handle will be silently dropped.
     state.bind.fs_images[SLOT_tex] = sg_alloc_image();
-
 
     // ***** Start loading the PNG File
     //  We don't need the returned handle since we can also get that inside the fetch-callback from the response
@@ -469,7 +477,7 @@ static void frame(void) {
         fonsSetColor(fs, sfons_rgba(255, 255, 255, 255));
         fonsSetBlur(fs, 0);
         fonsSetSpacing(fs, 0.0f);
-        fonsDrawText(fs, 10 * dpis, 10 * dpis, "Hi there", NULL);
+        fonsDrawText(fs, 10 * dpis, 20 * dpis, ("FPS: " + std::to_string(fps)).c_str(), NULL);
         if (draw_font == 0) {
             draw_font = 1;
             std::cout << "Drawed it!!!";
@@ -482,6 +490,17 @@ static void frame(void) {
     // ***** End Rendering
     sg_end_pass();
     sg_commit();
+
+
+    // ***** Update frames per second
+    ticks++;
+    uint64_t elapsed = stm_since(time_start);
+    double seconds = stm_sec(elapsed);
+    if (seconds >= 1.0) {
+        fps = ticks;
+        time_start = stm_now();
+        ticks = 0;
+    }
 }
 
 
