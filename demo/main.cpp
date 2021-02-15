@@ -288,8 +288,7 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         // ********** Copy data into our custom bitmap class, create image and trace outline
         DrBitmap bitmap = DrBitmap(pixels, static_cast<int>(png_width * png_height * 4), false, png_width, png_height);
         //bitmap = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, bitmap, Dr::RandomInt(-100, 100));
-        DrImage image("shapes", bitmap);
-
+        DrImage image("shapes", bitmap, 0.25f);
 
 
         // ********** Create 3D extrusion
@@ -301,7 +300,7 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         //mesh->initializeTextureQuad();
         //mesh->initializeTextureCube();
         //mesh->initializeTextureCone();
-        std::cout << "Initial triangle count: " << mesh->triangleCount() << std::endl;
+        std::cout << "Triangle count: " << (mesh->indexCount() / 3) << std::endl;
       
 
         // ********** Copy vertex data and set into state buffer

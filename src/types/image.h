@@ -48,13 +48,13 @@ private:
 
 public:
     // Constructors
-    DrImage(std::string image_name, DrBitmap &bitmap, bool outline = true);
+    DrImage(std::string image_name, DrBitmap &bitmap, float lod = 0.25, bool outline = true);
 
     // Settings
     std::string         getName()   { return m_simple_name; }
 
     // Image Helper Functions
-    void                autoOutlinePoints();
+    void                autoOutlinePoints(float lod);
     bool                outlineCanceled()                   { return m_outline_canceled; }
     bool                outlineProcessed()                  { return m_outline_processed; }
     void                setSimpleBox();

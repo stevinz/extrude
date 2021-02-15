@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <iostream>
 #include <limits>
+#include <list>
+#include <vector>
 
 #include "3rd_party/delaunator.h"
 #include "3rd_party/mesh_optimizer/meshoptimizer.h"
@@ -22,6 +24,7 @@
 #include "types/image.h"
 #include "types/point.h"
 #include "types/pointf.h"
+#include "types/polygonf.h"
 
 
 //####################################################################################
@@ -29,7 +32,6 @@
 //####################################################################################
 void DrMesh::initializeExtrudedImage(DrImage *image) {
 
-    // ********** Extrude Mesh
     for (int poly_number = 0; poly_number < static_cast<int>(image->m_poly_list.size()); poly_number++) {
         if (image->getBitmap().width < 1 || image->getBitmap().height < 1) continue;
 
@@ -37,20 +39,30 @@ void DrMesh::initializeExtrudedImage(DrImage *image) {
         std::vector<DrPointF>              &points =    image->m_poly_list[poly_number];
         std::vector<std::vector<DrPointF>> &hole_list = image->m_hole_list[poly_number];
 
+        // ***** Pick ONE of the following three
         double alpha_tolerance = (image->m_outline_processed) ? c_alpha_tolerance : 0.0;
-        //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Ear_Clipping, alpha_tolerance);
+        triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Ear_Clipping, alpha_tolerance);
         //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Monotone, alpha_tolerance);
-        triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Delaunay, alpha_tolerance);
+        //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Delaunay, alpha_tolerance);
 
         // ***** Add extruded triangles from Hull and Holes
-        int slices = wireframe ? 2 : 1;
+        int slices = 1;//wireframe ? 2 : 1;
         extrudeFacePolygon(points, image->getBitmap().width, image->getBitmap().height, slices);
         for (auto &hole : hole_list) {
             extrudeFacePolygon(hole, image->getBitmap().width, image->getBitmap().height, slices);
         }
     }
 
-    // ********** Optimize Mesh
+    // Optimize and smooth mesh
+    optimizeMesh();
+    //smoothMesh();     // <--- Experimental, doesnt work yet
+}
+
+
+//####################################################################################
+//##    Optimize Mesh
+//####################################################################################
+void DrMesh::optimizeMesh() {
     // Remap Table
     DrMesh result;
     size_t total_indices = vertexCount();
@@ -69,12 +81,77 @@ void DrMesh::initializeExtrudedImage(DrImage *image) {
     // 4. Vertex fetch optimization
     meshopt_optimizeVertexFetch(&result.vertices[0], &result.indices[0], result.indices.size(), &result.vertices[0], result.vertices.size(), sizeof(Vertex));
 
+    // Set indices and vertices from optimized mesh
     indices.resize(result.indices.size());
     vertices.resize(result.vertices.size());
-
-    for (size_t i = 0; i < result.indices.size(); i++)  indices[i]  = result.indices[i];
+    for (size_t i = 0; i < result.indices.size(); i++) indices[i] = result.indices[i];
     for (size_t i = 0; i < result.vertices.size(); i++) vertices[i] = result.vertices[i];
 }
+
+
+//####################################################################################
+//##    Smooth Mesh
+//####################################################################################
+void DrMesh::smoothMesh() {
+
+    std::vector<int> counts;
+    counts.resize(11);
+
+    // Loop  through all points, find neighbors, then average the points
+    std::vector<Vertex> smoothed;
+    for(size_t i = 0; i < vertexCount(); i++) {
+
+        // ***** Get list of neighbors
+        std::list<unsigned int> neighbors;
+        for(size_t j = 0; j < indexCount(); j += 3) {
+            if        (indices[j+0] == i) {
+                neighbors.push_back(indices[j+1]);   
+                neighbors.push_back(indices[j+2]);
+            } else if (indices[j+1] == i) {
+                neighbors.push_back(indices[j+0]);   
+                neighbors.push_back(indices[j+2]);
+            } else if (indices[j+2] == i) {
+                neighbors.push_back(indices[j+0]);   
+                neighbors.push_back(indices[j+1]);
+            }
+        }
+        neighbors.unique();
+
+        if (neighbors.size() < 10) {
+            counts[neighbors.size()]++;
+        } else {
+            counts[10]++;
+        }
+
+        // ***** Average with neighbors
+        float weight = 10.0;
+        Vertex v = vertices[i];
+        v.px *= weight;
+        v.py *= weight;
+        v.pz *= weight;
+        for(auto n : neighbors) {
+            v.px += vertices[n].px;
+            v.py += vertices[n].py;
+            v.pz += vertices[n].pz;
+            weight++;
+        }
+        v.px /= weight;
+        v.py /= weight;
+        v.pz /= weight;
+
+        smoothed.push_back(v);
+    }
+
+    // Show neighbor counts
+    for (int i = 0; i < counts.size(); i++) {
+        std::cout << "Neighbor count " << i << ": " << counts[i] << std::endl;
+    }
+
+    // ***** Set smoothed vertices
+    for (size_t i = 0; i < vertices.size(); i++) set(i, smoothed[i]);
+}
+
+
 
 
 //####################################################################################
@@ -244,7 +321,8 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
     // ***** Copy DrPointFs into TPPLPoly
     if (outline_points.size() < 3) return;
     std::list<TPPLPoly> testpolys, result;
-    TPPLPoly poly; poly.Init(outline_points.size());
+    TPPLPoly poly; 
+    poly.Init(outline_points.size());
     for (int i = 0; i < static_cast<int>(outline_points.size()); i++) {
         poly[i].x = outline_points[i].x;
         poly[i].y = outline_points[i].y;
@@ -254,14 +332,38 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
     // ***** Run triangulation
     TPPLPartition pp;
     switch (type) {
-        case Trianglulation::Ear_Clipping:      pp.Triangulate_EC(  &testpolys, &result);       break;
-        case Trianglulation::Monotone:          pp.Triangulate_MONO(&testpolys, &result);       break;
-        case Trianglulation::Delaunay: {
-            result.push_back( poly );
-            ///pp.ConvexPartition_OPT(&(*testpolys.begin()), &result);
-            ///pp.ConvexPartition_HM(&(*testpolys.begin()), &result);
+        // Can handle holes, hole should be in counter clockwise order
+        case Trianglulation::Ear_Clipping:  {
+            for (auto hole : hole_list) {
+                Winding_Orientation winding = DrPolygonF::findWindingOrientation(hole);
+                if (winding == Winding_Orientation::CounterClockwise) {
+                    std::reverse(hole.begin(), hole.end());
+                    std::cout << "Reversing hole points!" << std::endl;
+                }
+                TPPLPoly poly; 
+                poly.Init(hole.size());
+                poly.SetHole(true);
+                for (int i = 0; i < static_cast<int>(hole.size()); i++) {
+                    poly[i].x = hole[i].x;
+                    poly[i].y = hole[i].y;
+                }
+                testpolys.push_back(poly);
+            }
+            std::list<TPPLPoly> outpolys;
+            pp.RemoveHoles(&testpolys, &outpolys);
+            pp.Triangulate_EC(&outpolys, &result);       
             break;
         }
+        // Can not handle holes
+        case Trianglulation::Monotone:         
+            pp.Triangulate_MONO(&testpolys, &result);       
+            break; 
+        // Can handle holes, occasionaly polygons dont line up perfect
+        case Trianglulation::Delaunay:
+            result.push_back( poly );                       
+            //pp.ConvexPartition_OPT(&(*testpolys.begin()), &result);
+            //pp.ConvexPartition_HM(&(*testpolys.begin()), &result);
+            break;
     }
 
     // ***** Add triangulated convex hull to vertex data
@@ -348,7 +450,7 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
         for (std::size_t i = 0; i < coords.size(); i += 2) {
             bool has_it = false;
             for (std::size_t j = i + 2; j < coords.size(); j += 2) {
-                if (Dr::FuzzyCompare(coords[i], coords[j]) && Dr::FuzzyCompare(coords[i+1], coords[j+1])) {
+                if (Dr::IsCloseTo(coords[i], coords[j], 0.05) && Dr::IsCloseTo(coords[i+1], coords[j+1], 0.05)) {
                     has_it = true;
                     break;
                 }

@@ -85,7 +85,6 @@ public:
 
     // Properties
     int             indexCount() const      { return indices.size(); }
-    int             triangleCount() const   { return vertexCount() / 3; }
     int             vertexCount() const     { return vertices.size(); }
 
     // Creation Functions
@@ -94,6 +93,9 @@ public:
     void    initializeTextureCube();
     void    initializeTextureQuad();
 
+    // Optimize Mesh
+    void    optimizeMesh();
+    void    smoothMesh();
 
     // Helper Functions
     static  std::vector<DrPointF>   insertPoints(  const std::vector<DrPointF> &outline_points);
@@ -107,6 +109,7 @@ public:
 
     // Building Functions
     void    add(const DrVec3 &vertex, const DrVec3 &normal, const DrVec2 &text_coord, Triangle_Point point_number);
+    void    set(unsigned int vertex_position, Vertex vertex);
     void    extrude(float x1, float y1, float tx1, float ty1,
                     float x2, float y2, float tx2, float ty2, int steps = 1);
     void    cube(float x1, float y1, float tx1, float ty1,

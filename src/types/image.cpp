@@ -28,12 +28,12 @@ const int c_neighbors =             5;                  // Number of neighbors t
 //####################################################################################
 //##    Constructors
 //####################################################################################
-DrImage::DrImage(std::string image_name, DrBitmap &bitmap, bool outline) {
+DrImage::DrImage(std::string image_name, DrBitmap &bitmap, float lod, bool outline) {
     this->m_simple_name = image_name;
     this->m_bitmap = bitmap;
 
     if (outline) {
-        autoOutlinePoints();
+        autoOutlinePoints(lod);
     } else {
         m_poly_list.push_back( bitmap.polygon().points() );
         m_hole_list.push_back( { } );
@@ -60,8 +60,15 @@ void DrImage::setSimpleBox() {
 
 //####################################################################################
 //##    Loads list of points for Image and Image Holes
+//##
+//##    Level of Detail:
+//##        0.075 = Detailed
+//##        0.250 = Nice
+//##        1.000 = Low poly
+//##       10.000 = Really low poly
+//##
 //####################################################################################        
-void DrImage::autoOutlinePoints() {
+void DrImage::autoOutlinePoints(float lod) {
     m_poly_list.clear();
     m_hole_list.clear();
 
@@ -101,7 +108,7 @@ void DrImage::autoOutlinePoints() {
         // Optimize point list
         if (one_poly.size() > (c_neighbors * 2)) {
             one_poly = DrMesh::smoothPoints(one_poly, c_neighbors, 20.0, 1.0);
-            one_poly = PolylineSimplification::RamerDouglasPeucker(one_poly, 0.075);
+            one_poly = PolylineSimplification::RamerDouglasPeucker(one_poly, lod);  
             one_poly = DrMesh::insertPoints(one_poly);
         }
 
@@ -152,7 +159,7 @@ void DrImage::autoOutlinePoints() {
             // Optimize point list
             if (one_hole.size() > (c_neighbors * 2)) {
                 one_hole = DrMesh::smoothPoints(one_hole, c_neighbors, 30.0, 1.0);
-                one_hole = PolylineSimplification::RamerDouglasPeucker(one_hole, 0.1);
+                one_hole = PolylineSimplification::RamerDouglasPeucker(one_hole, lod);
                 one_hole = DrMesh::insertPoints(one_hole);
             }
 
