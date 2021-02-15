@@ -13,8 +13,6 @@
 #include "../compare.h"
 #include "../imaging.h"
 #include "../mesh.h"
-#include "../vertex_data.h"
-
 #include "color.h"
 #include "image.h"
 #include "point.h"
@@ -22,7 +20,6 @@
 #include "polygonf.h"
 #include "rect.h"
 #include "rectf.h"
-
 
 // Local Constants
 const int c_neighbors =             5;                  // Number of neighbors to smooth points with
@@ -103,9 +100,9 @@ void DrImage::autoOutlinePoints() {
 
         // Optimize point list
         if (one_poly.size() > (c_neighbors * 2)) {
-            one_poly = DrEngineVertexData::smoothPoints(one_poly, c_neighbors, 20.0, 1.0);
+            one_poly = DrMesh::smoothPoints(one_poly, c_neighbors, 20.0, 1.0);
             one_poly = PolylineSimplification::RamerDouglasPeucker(one_poly, 0.075);
-            one_poly = DrEngineVertexData::insertPoints(one_poly);
+            one_poly = DrMesh::insertPoints(one_poly);
         }
 
         // If we only have a couple points left, add shape as a box of the original image, otherwise use PolylineSimplification points
@@ -154,9 +151,9 @@ void DrImage::autoOutlinePoints() {
 
             // Optimize point list
             if (one_hole.size() > (c_neighbors * 2)) {
-                one_hole = DrEngineVertexData::smoothPoints(one_hole, c_neighbors, 30.0, 1.0);
+                one_hole = DrMesh::smoothPoints(one_hole, c_neighbors, 30.0, 1.0);
                 one_hole = PolylineSimplification::RamerDouglasPeucker(one_hole, 0.1);
-                one_hole = DrEngineVertexData::insertPoints(one_hole);
+                one_hole = DrMesh::insertPoints(one_hole);
             }
 
             if (one_hole.size() > 3) {

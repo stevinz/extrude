@@ -12,22 +12,24 @@
 #include <limits>
 
 #include "3rd_party/delaunator.h"
+#include "3rd_party/mesh_optimizer/meshoptimizer.h"
 #include "3rd_party/poly_partition.h"
 #include "3rd_party/polyline_simplification.h"
 #include "compare.h"
 #include "imaging.h"
+#include "mesh.h"
 #include "types/color.h"
 #include "types/image.h"
 #include "types/point.h"
 #include "types/pointf.h"
-#include "vertex_data.h"
 
 
 //####################################################################################
 //##    Builds an Extruded DrImage Model
 //####################################################################################
-void DrEngineVertexData::initializeExtrudedImage(DrImage *image, bool wireframe) {
+void DrMesh::initializeExtrudedImage(DrImage *image) {
 
+    // ********** Extrude Mesh
     for (int poly_number = 0; poly_number < static_cast<int>(image->m_poly_list.size()); poly_number++) {
         if (image->getBitmap().width < 1 || image->getBitmap().height < 1) continue;
 
@@ -47,6 +49,31 @@ void DrEngineVertexData::initializeExtrudedImage(DrImage *image, bool wireframe)
             extrudeFacePolygon(hole, image->getBitmap().width, image->getBitmap().height, slices);
         }
     }
+
+    // ********** Optimize Mesh
+    // Remap Table
+    DrMesh result;
+    size_t total_indices = vertexCount();
+    std::vector<unsigned int> remap(total_indices);        
+    size_t total_vertices = meshopt_generateVertexRemap(&remap[0], NULL, total_indices, &vertices[0], total_indices, sizeof(Vertex));
+	    
+    // 1. Indexing
+    result.indices.resize(total_indices);
+	meshopt_remapIndexBuffer(&result.indices[0], NULL, total_indices, &remap[0]);
+	result.vertices.resize(total_vertices);
+	meshopt_remapVertexBuffer(&result.vertices[0], &vertices[0], total_indices, sizeof(Vertex), &remap[0]);
+    // 2. Vertex cache optimization
+    meshopt_optimizeVertexCache(&result.indices[0], &result.indices[0], result.indices.size(), result.vertices.size());
+    // 3. Overdraw optimization
+    meshopt_optimizeOverdraw(&result.indices[0], &result.indices[0], result.indices.size(), &result.vertices[0].px, result.vertices.size(), sizeof(Vertex), 1.05f);
+    // 4. Vertex fetch optimization
+    meshopt_optimizeVertexFetch(&result.vertices[0], &result.indices[0], result.indices.size(), &result.vertices[0], result.vertices.size(), sizeof(Vertex));
+
+    indices.resize(result.indices.size());
+    vertices.resize(result.vertices.size());
+
+    for (size_t i = 0; i < result.indices.size(); i++)  indices[i]  = result.indices[i];
+    for (size_t i = 0; i < result.vertices.size(); i++) vertices[i] = result.vertices[i];
 }
 
 
@@ -67,7 +94,7 @@ const double c_sharp_angle =        110.0;
 const double c_smooth_min_size =     50.0;
 
 // Smooths points, neighbors is in each direction (so 1 is index +/- 1 more point in each direction
-std::vector<DrPointF> DrEngineVertexData::smoothPoints(const std::vector<DrPointF> &outline_points, int neighbors, double neighbor_distance, double weight) {
+std::vector<DrPointF> DrMesh::smoothPoints(const std::vector<DrPointF> &outline_points, int neighbors, double neighbor_distance, double weight) {
     std::vector<DrPointF> smooth_points { };
     if (outline_points.size() < 1) return outline_points;
 
@@ -156,7 +183,7 @@ std::vector<DrPointF> DrEngineVertexData::smoothPoints(const std::vector<DrPoint
 //####################################################################################
 //##    Inserts extra points in between set of points
 //####################################################################################
-std::vector<DrPointF> DrEngineVertexData::insertPoints(const std::vector<DrPointF> &outline_points) {
+std::vector<DrPointF> DrMesh::insertPoints(const std::vector<DrPointF> &outline_points) {
     std::vector<DrPointF> insert_points { };
 
     // Don't insert extra points for simple shapes
@@ -207,7 +234,7 @@ double averageTransparentPixels(const DrBitmap &bitmap, const DrPointF &at_point
     return (transparent_count / total_count);
 }
 
-void DrEngineVertexData::triangulateFace(const std::vector<DrPointF> &outline_points, const std::vector<std::vector<DrPointF>> &hole_list,
+void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const std::vector<std::vector<DrPointF>> &hole_list,
                                          const DrBitmap &image, bool wireframe, Trianglulation type, double alpha_tolerance) {
     int width =  image.width;
     int height = image.height;
@@ -398,7 +425,7 @@ void DrEngineVertexData::triangulateFace(const std::vector<DrPointF> &outline_po
 //####################################################################################
 //##    Add Extrusion Triangles to Vertex Data
 //####################################################################################
-void DrEngineVertexData::extrudeFacePolygon(const std::vector<DrPointF> &outline_points, int width, int height, int steps) {
+void DrMesh::extrudeFacePolygon(const std::vector<DrPointF> &outline_points, int width, int height, int steps, bool reverse) {
     double w2d = width  / 2.0;
     double h2d = height / 2.0;
 
@@ -429,8 +456,13 @@ void DrEngineVertexData::extrudeFacePolygon(const std::vector<DrPointF> &outline
         if (ty1 > 0.5f) y1 -= pixel_h; else y1 += pixel_h;
         if (ty2 > 0.5f) y2 -= pixel_h; else y2 += pixel_h;
 
-        extrude( x1, y1, tx1, ty1,
-                 x2, y2, tx2, ty2, steps);
+        if (reverse == false) {
+            extrude( x1, y1, tx1, ty1,
+                     x2, y2, tx2, ty2, steps);
+        } else {
+            extrude( x2, y2, tx2, ty2,
+                     x1, y1, tx1, ty1, steps);
+        }
     }
 }
 

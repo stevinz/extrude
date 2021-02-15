@@ -50,7 +50,7 @@ void main() {
     // ***** Color from texture
     vec4  color_in  = texture(tex, uv);
     vec3  rgb_in    = color_in.xyz;
-    float alpha_in  = color_in.a;
+    float alpha_in  = 1.0;//color_in.a;
     vec3  rgb_out   = rgb_in;
     float alpha_out = 1.0;
 

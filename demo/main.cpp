@@ -11,16 +11,15 @@
 //##    Includes
 //################################################################################
 #include "../src/3rd_party/handmade_math.h"
-#include "../src/3rd_party/mesh_optimizer/meshoptimizer.h"
 #include "../src/3rd_party/stb/stb_image.h"
 #include "../src/compare.h"
 #include "../src/imaging.h"
+#include "../src/mesh.h"
 #include "../src/random.h"
 #include "../src/types/bitmap.h"
 #include "../src/types/color.h"
 #include "../src/types/image.h"
 #include "../src/types/rect.h"
-#include "../src/vertex_data.h"
 
 #include <iostream>
 
@@ -75,15 +74,14 @@ typedef struct {
 static state_t state;
 
 // Image Variables
-DrEngineVertexData *texture_data = nullptr;
+DrMesh *mesh = new DrMesh();;
 bool initialized_image = false;
-int  image_size = 1;
-int  image_vertices = 3;
 
 // FPS Variables
 uint64_t time_start = 0;
 long ticks = 0;
 long fps =   0;
+
 
 //################################################################################
 //##    Sokol-fetch load callbacks 
@@ -169,17 +167,29 @@ void init(void) {
     state.pass_action = (pass_action);
 
     // ***** Starter triangle
-    const vertex_t vertices[] = {
+    // Vertex buffer
+    const Vertex vertices[] = {
         // pos                  normals                uvs          barycentric (wireframe)
-        {  1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f,      1,   1,      1.0f, 1.0f, 1.0f },
-        {  0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f,      0,   1,      1.0f, 1.0f, 1.0f },
-        {  1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f,      1,   0,      1.0f, 1.0f, 1.0f },      
+        { -1.0f, -1.0f, -1.0f,  1.0f, 1.0f, 1.0f,      0,   0,      1.0f, 1.0f, 1.0f },
+        {  1.0f, -1.0f, -1.0f,  1.0f, 1.0f, 1.0f,      1,   0,      1.0f, 1.0f, 1.0f },
+        {  1.0f,  1.0f, -1.0f,  1.0f, 1.0f, 1.0f,      1,   1,      1.0f, 1.0f, 1.0f },      
+        { -1.0f,  1.0f, -1.0f,  1.0f, 1.0f, 1.0f,      0,   1,      1.0f, 1.0f, 1.0f },      
     };
     sg_buffer_desc (sokol_buffer_vertex) {
         .data = SG_RANGE(vertices),
         .label = "temp-vertices"
     };
     state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
+
+    // Index buffer
+    const uint16_t indices[] = { 0, 1, 2, 0, 2, 3 };
+    sg_buffer_desc (sokol_buffer_index) {
+        .type = SG_BUFFERTYPE_INDEXBUFFER,
+        .data = SG_RANGE(indices),
+        .label = "temp-indices"
+    };
+    state.bind.index_buffer = sg_make_buffer(&(sokol_buffer_index));
+
 
     // ***** Pipeline State Object, sets 3D device parameters
     sg_pipeline_desc (sokol_pipleine) {
@@ -192,9 +202,11 @@ void init(void) {
                 [ATTR_vs_bary].format = SG_VERTEXFORMAT_FLOAT3,
             }
         },
-        .primitive_type  = SG_PRIMITIVETYPE_TRIANGLES,
-        .index_type = SG_INDEXTYPE_NONE,
-        .cull_mode = SG_CULLMODE_NONE, //SG_CULLMODE_FRONT,
+        //.primitive_type  = SG_PRIMITIVETYPE_TRIANGLES,
+        //.index_type = SG_INDEXTYPE_NONE,
+        .index_type = SG_INDEXTYPE_UINT16,
+        //.cull_mode = SG_CULLMODE_NONE, 
+        .cull_mode = SG_CULLMODE_FRONT,
         .depth = {
             .compare = SG_COMPAREFUNC_LESS_EQUAL,
             .write_enabled = true
@@ -276,76 +288,63 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         // ********** Copy data into our custom bitmap class, create image and trace outline
         DrBitmap bitmap = DrBitmap(pixels, static_cast<int>(png_width * png_height * 4), false, png_width, png_height);
         //bitmap = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, bitmap, Dr::RandomInt(-100, 100));
-        DrImage *image = new DrImage("shapes", bitmap);
+        DrImage image("shapes", bitmap);
 
-        // Set new camera eye position based on image size
-        image_size = Dr::Max(image->getBitmap().width, image->getBitmap().height);      
+
 
         // ********** Create 3D extrusion
-        if (texture_data != nullptr) delete texture_data;
-        texture_data = new DrEngineVertexData();
-        bool wireframe = true;
-        texture_data->initializeExtrudedImage(image, wireframe);
-        //texture_data->initializeTextureQuad(image_size);
-        //texture_data->initializeTextureCube(image_size);
-        //texture_data->initializeTextureCone(image_size);
-        
+        if (mesh != nullptr) delete mesh;
+        mesh = new DrMesh();
+        mesh->image_size = Dr::Max(image.getBitmap().width, image.getBitmap().height);      
+        mesh->wireframe = true;
+        mesh->initializeExtrudedImage(&image);
+        //mesh->initializeTextureQuad();
+        //mesh->initializeTextureCube();
+        //mesh->initializeTextureCone();
+        std::cout << "Initial triangle count: " << mesh->triangleCount() << std::endl;
+      
+
         // ********** Copy vertex data and set into state buffer
-        std::cout << "Triangle count: " << texture_data->triangleCount() << std::endl;
+        if (mesh->vertexCount() > 0) {
+            // ***** Vertex Buffer
+            unsigned int total_vertices = mesh->vertices.size();
 
-
-
-
-        size_t index_count = texture_data->vertexCount();
-        std::vector<unsigned int> remap(index_count);                       // allocate temporary memory for the remap table
-        size_t vertex_count = meshopt_generateVertexRemap(&remap[0], NULL, index_count, &texture_data->vertices()[0], index_count, sizeof(vertex_t));
-
-        std::cout << "Pre  Indexing Vertex Count: " << index_count << std::endl;
-        std::cout << "Post Indexing Vertex Count: " << vertex_count << std::endl;
-
-        unsigned int indices[index_count];
-        vertex_t vertices[vertex_count];
-
-        meshopt_remapIndexBuffer(&indices[0], NULL, index_count, &remap[0]);
-        meshopt_remapVertexBuffer(&vertices[0], &texture_data->vertices()[0], vertex_count, sizeof(vertex_t), &remap[0]);
-
-
-
-        if (texture_data->vertexCount() > 0) {
-
-            // image_vertices = texture_data->vertexCount();
-            // vertex_t v[texture_data->vertexCount()];
-            // for (size_t i = 0; i < texture_data->vertexCount(); i++) {
-            //     v[i] = texture_data->vertices()[i];
-            // }
-
-
-            image_vertices = vertex_count;
-            vertex_t v[vertex_count];
-            for (size_t i = 0; i < vertex_count; i++) {
-                v[i] = vertices[i];
-            }
-
+            std::cout << "Vertices count: " << total_vertices << std::endl;
+            Vertex vertices[total_vertices];
+            for (size_t i = 0; i < total_vertices; i++) vertices[i] = mesh->vertices[i];
             sg_buffer_desc (sokol_buffer_vertex) {
-                .data = SG_RANGE(v),
+                .data = SG_RANGE(vertices),
                 .label = "extruded-vertices"
             };
-            std::cout << "Sizeof: " << sokol_buffer_vertex.data.size << std::endl;
-
             sg_destroy_buffer(state.bind.vertex_buffers[0]);
             state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
+
+            // ***** Index Buffer
+            unsigned int total_indices = mesh->indices.size();
+
+            std::cout << "Indices count: " << total_indices << std::endl;
+            uint16_t indices[total_indices];
+            for (size_t i = 0; i < total_indices; i++) indices[i] = mesh->indices[i];
+            sg_buffer_desc (sokol_buffer_index) {
+                .type = SG_BUFFERTYPE_INDEXBUFFER,
+                .data = SG_RANGE(indices),
+                .label = "temp-indices"
+            };
+            sg_destroy_buffer(state.bind.index_buffer);
+            state.bind.index_buffer = sg_make_buffer(&(sokol_buffer_index));
         }
         
+
         // ********** Initialze the sokol-gfx texture
         sg_image_desc (sokol_image) {
-            .width =  image->getBitmap().width,
-            .height = image->getBitmap().height,
+            .width =  image.getBitmap().width,
+            .height = image.getBitmap().height,
             .pixel_format = SG_PIXELFORMAT_RGBA8,
             .min_filter = SG_FILTER_LINEAR,
             .mag_filter = SG_FILTER_LINEAR,
             .data.subimage[0][0] = {
-                .ptr =  &(image->getBitmap().data[0]),
-                .size = (size_t)image->getBitmap().size(),
+                .ptr =  &(image.getBitmap().data[0]),
+                .size = (size_t)image.getBitmap().size(),
             }
         };
         
@@ -468,7 +467,7 @@ static void frame(void) {
 
     // ***** Compute model-view-projection matrix for vertex shader
     hmm_mat4 proj = HMM_Perspective(60.0f, (float)sapp_width()/(float)sapp_height(), 0.01f, 1000.0f);
-    hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, image_size * 1.5f), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
+    hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, mesh->image_size * 1.5f), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
     hmm_mat4 view_proj = HMM_MultiplyMat4(proj, view);
     state.rx += 0.50f;
     state.ry += 0.75f;
@@ -486,7 +485,7 @@ static void frame(void) {
     sg_apply_pipeline(state.pip);
     sg_apply_bindings(&state.bind);
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, SG_RANGE(vs_params));
-    sg_draw(0, image_vertices, 1);
+    sg_draw(0, mesh->indices.size(), 1);
 
 
     // ***** Text
