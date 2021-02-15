@@ -3237,4 +3237,8 @@ hmm_quaternion HMM_PREFIX(QuaternionFromAxisAngle)(hmm_vec3 Axis, float AngleOfR
     return (Result);
 }
 
+
+
+
+
 #endif /* HANDMADE_MATH_IMPLEMENTATION */

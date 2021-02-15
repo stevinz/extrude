@@ -32,14 +32,11 @@ typedef std::map<DrVec3, std::vector<Vertex>> NeighborMap;
 const int   c_vertex_length = 11;
 const float c_extrude_depth = 0.5f;
 
-// Texture coordinate multiplier from float range (0.0 to 1.0) to int range (0 to 32767)
-const int   c_text_multi = 32767;       
-
 // Vertex Declaration (11 total data points)
 typedef struct {
     float x, y, z;          // Position
     float n1, n2, n3;       // Normal
-    int16_t u, v;           // Texture Coordinate
+    float u, v;             // Texture Coordinate
     float b1, b2, b3;       // Barycentric coordinate (used for wireframe rendering)
 } vertex_t;
 

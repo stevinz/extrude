@@ -11,6 +11,7 @@
 //##    Includes
 //################################################################################
 #include "../src/3rd_party/handmade_math.h"
+#include "../src/3rd_party/mesh_optimizer/meshoptimizer.h"
 #include "../src/3rd_party/stb/stb_image.h"
 #include "../src/compare.h"
 #include "../src/imaging.h"
@@ -187,7 +188,7 @@ void init(void) {
             .attrs = {
                 [ATTR_vs_pos].format = SG_VERTEXFORMAT_FLOAT3,
                 [ATTR_vs_norm].format = SG_VERTEXFORMAT_FLOAT3,
-                [ATTR_vs_texcoord0].format = SG_VERTEXFORMAT_SHORT2N,
+                [ATTR_vs_texcoord0].format = SG_VERTEXFORMAT_FLOAT2, //SG_VERTEXFORMAT_SHORT2N,
                 [ATTR_vs_bary].format = SG_VERTEXFORMAT_FLOAT3,
             }
         },
@@ -291,14 +292,42 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         
         // ********** Copy vertex data and set into state buffer
         std::cout << "Triangle count: " << texture_data->triangleCount() << std::endl;
+
+
+
+
+        size_t index_count = texture_data->vertexCount();
+        std::vector<unsigned int> remap(index_count);                       // allocate temporary memory for the remap table
+        size_t vertex_count = meshopt_generateVertexRemap(&remap[0], NULL, index_count, &texture_data->vertices()[0], index_count, sizeof(vertex_t));
+
+        std::cout << "Pre  Indexing Vertex Count: " << index_count << std::endl;
+        std::cout << "Post Indexing Vertex Count: " << vertex_count << std::endl;
+
+        unsigned int indices[index_count];
+        vertex_t vertices[vertex_count];
+
+        meshopt_remapIndexBuffer(&indices[0], NULL, index_count, &remap[0]);
+        meshopt_remapVertexBuffer(&vertices[0], &texture_data->vertices()[0], vertex_count, sizeof(vertex_t), &remap[0]);
+
+
+
         if (texture_data->vertexCount() > 0) {
-            image_vertices = texture_data->vertexCount();
-            vertex_t vertices[texture_data->vertexCount()];
-            for (size_t i = 0; i < texture_data->vertexCount(); i++) {
-                vertices[i] = texture_data->vertices()[i];
+
+            // image_vertices = texture_data->vertexCount();
+            // vertex_t v[texture_data->vertexCount()];
+            // for (size_t i = 0; i < texture_data->vertexCount(); i++) {
+            //     v[i] = texture_data->vertices()[i];
+            // }
+
+
+            image_vertices = vertex_count;
+            vertex_t v[vertex_count];
+            for (size_t i = 0; i < vertex_count; i++) {
+                v[i] = vertices[i];
             }
+
             sg_buffer_desc (sokol_buffer_vertex) {
-                .data = SG_RANGE(vertices),
+                .data = SG_RANGE(v),
                 .label = "extruded-vertices"
             };
             std::cout << "Sizeof: " << sokol_buffer_vertex.data.size << std::endl;

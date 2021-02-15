@@ -25,6 +25,7 @@ file(GLOB SOURCE_CODE_FILES
     "demo/3rd_party/whereami/*.c**"
     "src/*.c**"
     "src/3rd_party/*.c**"
+    "src/3rd_party/mesh_optimizer/*.c**"
     "src/types/*.c**"
 )
 add_executable(${PROJECT_NAME} ${SOURCE_CODE_FILES})

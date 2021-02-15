@@ -37,8 +37,8 @@ void DrEngineVertexData::add(const DrVec3 &vertex, const DrVec3 &normal, const D
     v.n1 = normal.x;
     v.n2 = normal.y;
     v.n3 = normal.z;
-    v.u =  Dr::Clamp(static_cast<int>(text_coord.x * c_text_multi), 0, 32767);
-    v.v =  Dr::Clamp(static_cast<int>(text_coord.y * c_text_multi), 0, 32767);
+    v.u =  text_coord.x;
+    v.v =  text_coord.y;
     switch (point_number) {
         case Triangle_Point::Point1:    v.b1 = 1;   v.b2 = 0;   v.b3 = 0;   break;
         case Triangle_Point::Point2:    v.b1 = 0;   v.b2 = 1;   v.b3 = 0;   break;
