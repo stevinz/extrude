@@ -57,8 +57,9 @@ void DrMesh::initializeExtrudedImage(DrImage *image) {
     // Optimize and smooth mesh
     optimizeMesh();
 
-    for (int i = 0; i < 2; i++)
-        smoothMesh();                               // <--- Experimental, doesnt work yet
+    //for (int i = 0; i < 2; i++) {
+    //    smoothMesh();                               // <--- Experimental, doesnt work yet
+    //}
 }
 
 

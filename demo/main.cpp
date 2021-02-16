@@ -20,6 +20,7 @@
 #include "../src/types/color.h"
 #include "../src/types/image.h"
 #include "../src/types/rect.h"
+#include "../src/types/vec2.h"
 
 #include <iostream>
 
@@ -58,7 +59,6 @@ struct item_t {
 
 struct state_t {
     // Gfx
-    float rx, ry;
     sg_pass_action pass_action;
     sg_pipeline pip;
     sg_bindings bind;
@@ -72,8 +72,8 @@ struct state_t {
 
     // Font
     FONScontext* fons;
-    float dpi_scale;
-    int font_normal;
+    float   dpi_scale;
+    int     font_normal;
     uint8_t font_normal_data[MAX_FILE_SIZE];
 };
 
@@ -94,6 +94,15 @@ bool initialized_image = false;
 uint64_t time_start = 0;
 long ticks = 0;
 long fps =   0;
+
+// Model Rotation
+DrVec2      total_rotation {  0.f,  0.f };
+DrVec2      add_rotation   { 25.f, 25.f };
+hmm_mat4    model =         Dr::IdentityMatrix();
+DrVec2      mouse_down =    { 0, 0 };
+float       rotate_speed =  1.f;
+bool        is_mouse_down = false;
+float       zoom = 1.5f;
 
 
 //################################################################################
@@ -335,6 +344,11 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
             };
             sg_destroy_buffer(state.bind.index_buffer);
             state.bind.index_buffer = sg_make_buffer(&(sokol_buffer_index));
+
+            // ***** Reset rotation
+            total_rotation.set(0.f, 0.f);
+            add_rotation.set(25.f, 25.f);
+            model = Dr::IdentityMatrix();
         }
         
 
@@ -440,6 +454,45 @@ static void input(const sapp_event* event) {
             case SAPP_KEYCODE_W:
                 mesh->wireframe = !mesh->wireframe;
                 break;
+            default: ;
+        }
+
+    } else if (event->type == SAPP_EVENTTYPE_MOUSE_SCROLL) {
+        zoom -= (event->scroll_y * 0.1f);
+        zoom = Dr::Clamp(zoom, 0.5f, 5.0f);
+
+    } else if (event->type == SAPP_EVENTTYPE_MOUSE_DOWN) {
+        if (event->mouse_button == SAPP_MOUSEBUTTON_LEFT) {
+            mouse_down.set(event->mouse_y, event->mouse_x);
+            is_mouse_down = true;
+        }
+        
+    } else if (event->type == SAPP_EVENTTYPE_MOUSE_UP) {
+        if (event->mouse_button == SAPP_MOUSEBUTTON_LEFT) {
+            is_mouse_down = false;
+        }
+
+    } else if (event->type == SAPP_EVENTTYPE_MOUSE_MOVE) {
+        if (is_mouse_down) {
+            float x_movement = event->mouse_y;
+            float y_movement = event->mouse_x;
+
+            if (mouse_down.x < x_movement) {
+                add_rotation.x = rotate_speed * (x_movement - mouse_down.x);
+            } else if (mouse_down.x > x_movement) {
+                add_rotation.x = 360 - (rotate_speed * (mouse_down.x - x_movement));
+            }
+            
+            if (mouse_down.y > y_movement) {
+                add_rotation.y = 360 - (rotate_speed * (mouse_down.y - y_movement));
+            } else if (mouse_down.y < y_movement) {
+                add_rotation.y = rotate_speed * (y_movement - mouse_down.y);
+            }
+
+            mouse_down.x = x_movement;
+            mouse_down.y = y_movement;
+            add_rotation.x = Dr::EqualizeAngle0to360(add_rotation.x);
+            add_rotation.y = Dr::EqualizeAngle0to360(add_rotation.y);
         }
 
     } else if (event->type == SAPP_EVENTTYPE_FILES_DROPPED) {
@@ -478,14 +531,18 @@ static void frame(void) {
     sfetch_dowork();
 
     // ***** Compute model-view-projection matrix for vertex shader
-    hmm_mat4 proj = HMM_Perspective(60.0f, (float)sapp_width()/(float)sapp_height(), 0.01f, 1000.0f);
-    hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, mesh->image_size * 1.5f), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
+    hmm_mat4 proj = HMM_Perspective(52.5f, (float)sapp_width()/(float)sapp_height(), 50.f, 20000.0f);
+    hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, mesh->image_size * zoom), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
     hmm_mat4 view_proj = HMM_MultiplyMat4(proj, view);
-    state.rx += 0.50f;
-    state.ry += 0.75f;
-    hmm_mat4 rxm = HMM_Rotate(state.rx, HMM_Vec3(1.0f, 0.0f, 0.0f));
-    hmm_mat4 rym = HMM_Rotate(state.ry, HMM_Vec3(0.0f, 1.0f, 0.0f));
-    hmm_mat4 model = HMM_MultiplyMat4(rxm, rym);
+
+    hmm_mat4 rxm = HMM_Rotate(add_rotation.x, HMM_Vec3(1.0f, 0.0f, 0.0f));
+    hmm_mat4 rym = HMM_Rotate(add_rotation.y, HMM_Vec3(0.0f, 1.0f, 0.0f));
+    hmm_mat4 rotate = HMM_MultiplyMat4(rxm, rym); 
+             model =  HMM_MultiplyMat4(rotate, model);
+    total_rotation.x = Dr::EqualizeAngle0to360(total_rotation.x + add_rotation.x);
+    total_rotation.y = Dr::EqualizeAngle0to360(total_rotation.y + add_rotation.y);
+    add_rotation.set(0.f, 0.f);
+
 
     // Uniforms for vertex shader
     vs_params_t vs_params;
@@ -522,7 +579,8 @@ static void frame(void) {
         fonsSetColor(fs, sfons_rgba(255, 255, 255, 255));
         fonsSetBlur(fs, 0);
         fonsSetSpacing(fs, 0.0f);
-        fonsDrawText(fs, 10 * dpis, 20 * dpis, ("FPS: " + std::to_string(fps)).c_str(), NULL);
+        fonsDrawText(fs, 10 * dpis, 20 * dpis, ("FPS: " +  std::to_string(fps)).c_str(), NULL);
+        fonsDrawText(fs, 10 * dpis, 40 * dpis, ("ZOOM: " + std::to_string(zoom)).c_str(), NULL);
         if (draw_font == 0) {
             draw_font = 1;
             std::cout << "Drawed it!!!";
