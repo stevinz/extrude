@@ -107,6 +107,15 @@ namespace Dr {
         return static_cast<T>(rounded);
     }
 
+    // Round to next power of 2 (see bit-twiddling-hacks)
+    template<class T> int   RoundPowerOf2(T number) {
+        uint32_t vi = static_cast<uint32_t>(number) - 1; 
+        for (uint32_t i = 0; i < 5; i++) { 
+            vi |= (vi >> (1 << i)); 
+        }
+        return static_cast<int>(vi + 1);
+    }
+
 
     //####################################################################################
     //##    Angle Functions

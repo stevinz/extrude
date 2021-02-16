@@ -35,6 +35,10 @@ void main() {
 @fs fs
 uniform sampler2D tex;
 
+uniform fs_params {
+    float u_wireframe;
+};
+
 in vec2 uv;
 in vec3 vert;
 in vec3 vert_normal;
@@ -56,8 +60,7 @@ void main() {
 
 
     // ***** Wireframe
-    float wireframe = 1.0;
-    if (wireframe == 1.0) {
+    if (u_wireframe == 1.0) {
         float width = 1.0;
 
         vec3  d = fwidth(vert_bary);
@@ -76,10 +79,13 @@ void main() {
 
     // ***** Shade Away
     // Calculate angle between camera vector and vertex normal for triangle shading
-    vec3 eye = vec3(0.0, 1.5, 500.0);
-    float dp = dot(normalize(vert_normal), normalize(vert - eye)) + 0.15;
-          dp = clamp(dp, 0.0, 1.0);
-    rgb_out = mix(vec3(0.0), rgb_out, dp);
+    float shade_away = 1.0;
+    if (shade_away == 1.0) {
+        vec3 eye = vec3(0.0, 1.5, 500.0);
+        float dp = dot(normalize(vert_normal), normalize(vert - eye)) + 0.15;
+              dp = clamp(dp, 0.0, 1.0);
+        rgb_out = mix(vec3(0.0), rgb_out, dp);
+    }
     
 
     // ***** Set Final Color

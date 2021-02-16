@@ -36,22 +36,27 @@
     #include "3rd_party/wai/whereami.c"
 #endif
 
+#include "input.h"
 #include "shader.glsl.h"
 
 
 //################################################################################
-//##    Local Structs / Defines / Globals
+//##    Local Structs / Defines
 //################################################################################
 #define MAX_FILE_SIZE (2048 * 2048)
 
-typedef enum {
+enum loadstate_t {
     LOADSTATE_UNKNOWN = 0,
     LOADSTATE_SUCCESS,
     LOADSTATE_FAILED,
     LOADSTATE_FILE_TOO_BIG,
-} loadstate_t;
+};
 
-typedef struct {
+struct item_t {
+    sapp_event event = { };
+};
+
+struct state_t {
     // Gfx
     float rx, ry;
     sg_pass_action pass_action;
@@ -61,20 +66,28 @@ typedef struct {
     // Fetch / Drop
     uint8_t file_buffer[MAX_FILE_SIZE];
     loadstate_t load_state;
-        
+
+    // Events
+    item_t items[_SAPP_EVENTTYPE_NUM];
+
     // Font
     FONScontext* fons;
     float dpi_scale;
     int font_normal;
     uint8_t font_normal_data[MAX_FILE_SIZE];
-} state_t;
+};
 
-// ########## Globals
+
+
+//################################################################################
+//##    Globals
+//################################################################################
 // Sokol Variables
 static state_t state;
 
 // Image Variables
-DrMesh *mesh = new DrMesh();;
+std::shared_ptr<DrMesh> mesh = std::make_shared<DrMesh>();
+std::shared_ptr<DrImage> image = nullptr;
 bool initialized_image = false;
 
 // FPS Variables
@@ -91,13 +104,6 @@ static void font_normal_loaded(const sfetch_response_t* response) {
     if (response->fetched) {
         state.font_normal = fonsAddFontMem(state.fons, "sans", (unsigned char*)response->buffer_ptr, (int)response->fetched_size,  false);
     } 
-}
-
-// Round to next power of 2 (see bit-twiddling-hacks)
-static int round_pow2(float v) {
-    uint32_t vi = ((uint32_t) v) - 1;
-    for (uint32_t i = 0; i < 5; i++) { vi |= (vi >> (1<<i)); }
-    return (int) (vi + 1);
 }
 
 
@@ -154,17 +160,16 @@ void init(void) {
 
     // ***** Font Setup, make sure the fontstash atlas width/height is pow-2 
     state.dpi_scale = sapp_dpi_scale();
-    const int atlas_dim = round_pow2(512.0f * state.dpi_scale);
+    const int atlas_dim = Dr::RoundPowerOf2(512.0f * state.dpi_scale);
     FONScontext* fons_context = sfons_create(atlas_dim, atlas_dim, FONS_ZERO_TOPLEFT);
     state.fons = fons_context;
     state.font_normal = FONS_INVALID;          
 
 
     // ***** Pass action for clearing the framebuffer to some color
-    sg_pass_action (pass_action) {
-        .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.125f, 0.25f, 0.35f, 1.0f } }
-    };
-    state.pass_action = (pass_action);
+    state.pass_action.colors[0].action = SG_ACTION_CLEAR;
+    state.pass_action.colors[0].value = { 0.125f, 0.25f, 0.35f, 1.0f };
+
 
     // ***** Starter triangle
     // Vertex buffer
@@ -288,15 +293,14 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         // ********** Copy data into our custom bitmap class, create image and trace outline
         DrBitmap bitmap = DrBitmap(pixels, static_cast<int>(png_width * png_height * 4), false, png_width, png_height);
         //bitmap = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, bitmap, Dr::RandomInt(-100, 100));
-        DrImage image("shapes", bitmap, 0.25f);
+        image = std::make_shared<DrImage>("shapes", bitmap, 0.25f);
 
 
         // ********** Create 3D extrusion
-        if (mesh != nullptr) delete mesh;
-        mesh = new DrMesh();
-        mesh->image_size = Dr::Max(image.getBitmap().width, image.getBitmap().height);      
+        mesh = std::make_shared<DrMesh>();
+        mesh->image_size = Dr::Max(image->getBitmap().width, image->getBitmap().height);      
         mesh->wireframe = true;
-        mesh->initializeExtrudedImage(&image);
+        mesh->initializeExtrudedImage(image.get());
         //mesh->initializeTextureQuad();
         //mesh->initializeTextureCube();
         //mesh->initializeTextureCone();
@@ -336,14 +340,14 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
 
         // ********** Initialze the sokol-gfx texture
         sg_image_desc (sokol_image) {
-            .width =  image.getBitmap().width,
-            .height = image.getBitmap().height,
+            .width =  image->getBitmap().width,
+            .height = image->getBitmap().height,
             .pixel_format = SG_PIXELFORMAT_RGBA8,
             .min_filter = SG_FILTER_LINEAR,
             .mag_filter = SG_FILTER_LINEAR,
             .data.subimage[0][0] = {
-                .ptr =  &(image.getBitmap().data[0]),
-                .size = (size_t)image.getBitmap().size(),
+                .ptr =  &(image->getBitmap().data[0]),
+                .size = (size_t)image->getBitmap().size(),
             }
         };
         
@@ -428,8 +432,17 @@ static void native_load_callback(const sfetch_response_t* response) {
 //################################################################################
 //##    Input
 //################################################################################
-static void input(const sapp_event* ev) {
-    if (ev->type == SAPP_EVENTTYPE_FILES_DROPPED) {
+static void input(const sapp_event* event) {
+    state.items[event->type].event = *event;
+
+    if ((event->type == SAPP_EVENTTYPE_KEY_DOWN) && !event->key_repeat) {
+        switch (event->key_code) {
+            case SAPP_KEYCODE_W:
+                mesh->wireframe = !mesh->wireframe;
+                break;
+        }
+
+    } else if (event->type == SAPP_EVENTTYPE_FILES_DROPPED) {
         #if defined(__EMSCRIPTEN__)
             // on emscripten need to use the sokol-app helper function to load the file data
             sapp_html5_fetch_request (sokol_fetch_request) {
@@ -479,11 +492,16 @@ static void frame(void) {
     vs_params.m =   model;
     vs_params.mvp = HMM_MultiplyMat4(view_proj, model);
     
+    // Uniforms for fragment shader
+    fs_params_t fs_params;
+    fs_params.u_wireframe = (mesh->wireframe) ? 1.0f : 0.0f;
+
     // ***** Render pass
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
     sg_apply_pipeline(state.pip);
     sg_apply_bindings(&state.bind);
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, SG_RANGE(vs_params));
+    sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, SG_RANGE(fs_params));
     sg_draw(0, mesh->indices.size(), 1);
 
 
@@ -552,21 +570,16 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .window_title = "3D Extrusion",
         .init_cb = init,
         .frame_cb = frame,
-        .cleanup_cb = cleanup,
         .event_cb = input,
-        .width = 600,
-        .height = 400,
+        .cleanup_cb = cleanup,
+        .width = 800,
+        .height = 600,
+        .enable_clipboard = true,
         .enable_dragndrop = true,
         .max_dropped_files = 1,
     };
     return sokol_app;
 }
-
-
-
-
-
-
 
 
 

@@ -230,6 +230,12 @@ float DrVec3::norm() const {
     return std::sqrt(normSquared());
 }
 
+float DrVec3::distance(const DrVec3 &v_) const {
+    float d = sqrt(pow(v_.x - x, 2) +  
+                   pow(v_.y - y, 2) +  
+                   pow(v_.z - z, 2)); 
+    return d;
+}
 
 //####################################################################################
 //##    Accessors

@@ -41,12 +41,13 @@ void DrMesh::initializeExtrudedImage(DrImage *image) {
 
         // ***** Pick ONE of the following three
         double alpha_tolerance = (image->m_outline_processed) ? c_alpha_tolerance : 0.0;
-        triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Ear_Clipping, alpha_tolerance);
+        //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Ear_Clipping, alpha_tolerance);
+        triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Triangulate_Opt, alpha_tolerance);
         //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Monotone, alpha_tolerance);
         //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Delaunay, alpha_tolerance);
 
         // ***** Add extruded triangles from Hull and Holes
-        int slices = 1;//wireframe ? 2 : 1;
+        int slices = wireframe ? 3 : 1;
         extrudeFacePolygon(points, image->getBitmap().width, image->getBitmap().height, slices);
         for (auto &hole : hole_list) {
             extrudeFacePolygon(hole, image->getBitmap().width, image->getBitmap().height, slices);
@@ -55,7 +56,9 @@ void DrMesh::initializeExtrudedImage(DrImage *image) {
 
     // Optimize and smooth mesh
     optimizeMesh();
-    //smoothMesh();     // <--- Experimental, doesnt work yet
+
+    for (int i = 0; i < 2; i++)
+        smoothMesh();                               // <--- Experimental, doesnt work yet
 }
 
 
@@ -97,60 +100,110 @@ void DrMesh::smoothMesh() {
     std::vector<int> counts;
     counts.resize(11);
 
-    // Loop  through all points, find neighbors, then average the points
-    std::vector<Vertex> smoothed;
+    // Keep list of vertices processed
+    std::vector<bool> processed;
     for(size_t i = 0; i < vertexCount(); i++) {
+        processed.push_back(false);
+    }
+
+    // Keep list of vertices smoothed
+    std::vector<Vertex> smoothed;
+    smoothed.resize(vertexCount());
+
+    // Loop through all points, find neighbors, then average the points
+    for(size_t one_vertex = 0; one_vertex < vertexCount(); one_vertex++) {
+        if (processed[one_vertex]) continue;
+
+        // Find list of points that are identical
+        std::list<unsigned int> same_points;
+        same_points.push_back(one_vertex);
+        processed[one_vertex] = true;
+        for(size_t j = 0; j < vertexCount(); j++) {
+            if (one_vertex == j) continue;
+            if (Dr::IsCloseTo(vertices[one_vertex].px, vertices[j].px, 0.5f) &&
+                Dr::IsCloseTo(vertices[one_vertex].py, vertices[j].py, 0.5f) &&
+                Dr::IsCloseTo(vertices[one_vertex].pz, vertices[j].pz, 0.5f)) {
+                    same_points.push_back(j);
+                    processed[j] = true;
+            }
+        }
+        same_points.unique();
 
         // ***** Get list of neighbors
         std::list<unsigned int> neighbors;
-        for(size_t j = 0; j < indexCount(); j += 3) {
-            if        (indices[j+0] == i) {
-                neighbors.push_back(indices[j+1]);   
-                neighbors.push_back(indices[j+2]);
-            } else if (indices[j+1] == i) {
-                neighbors.push_back(indices[j+0]);   
-                neighbors.push_back(indices[j+2]);
-            } else if (indices[j+2] == i) {
-                neighbors.push_back(indices[j+0]);   
-                neighbors.push_back(indices[j+1]);
+        for(auto point : same_points) {
+            for(size_t j = 0; j < indexCount(); j += 3) {
+                if        (indices[j+0] == point) {
+                    neighbors.push_back(indices[j+1]);   
+                    neighbors.push_back(indices[j+2]);
+                } else if (indices[j+1] == point) {
+                    neighbors.push_back(indices[j+0]);   
+                    neighbors.push_back(indices[j+2]);
+                } else if (indices[j+2] == point) {
+                    neighbors.push_back(indices[j+0]);   
+                    neighbors.push_back(indices[j+1]);
+                }
             }
         }
         neighbors.unique();
 
-        if (neighbors.size() < 10) {
-            counts[neighbors.size()]++;
-        } else {
-            counts[10]++;
-        }
-
         // ***** Average with neighbors
-        float weight = 10.0;
-        Vertex v = vertices[i];
+        float weight = 5.0;
+        Vertex v = vertices[one_vertex];
+        Vertex o = vertices[one_vertex];
         v.px *= weight;
         v.py *= weight;
         v.pz *= weight;
+        v.nx *= weight;
+        v.ny *= weight;
+        v.nz *= weight;
+        v.tx *= weight;
+        v.ty *= weight;
         for(auto n : neighbors) {
-            v.px += vertices[n].px;
-            v.py += vertices[n].py;
-            v.pz += vertices[n].pz;
-            weight++;
+            float d = 10.0 / abs(DrVec3(o.px, o.py, o.pz).distance({vertices[n].px, vertices[n].py, vertices[n].pz}));
+            v.px += (vertices[n].px * d);
+            v.py += (vertices[n].py * d);
+            v.pz += (vertices[n].pz * d);
+            v.nx += (vertices[n].nx * d);
+            v.ny += (vertices[n].ny * d);
+            v.nz += (vertices[n].nz * d);
+            v.tx += (vertices[n].tx * d);
+            v.ty += (vertices[n].ty * d);
+            weight += d;
         }
         v.px /= weight;
         v.py /= weight;
         v.pz /= weight;
-
-        smoothed.push_back(v);
-    }
-
-    // Show neighbor counts
-    for (int i = 0; i < counts.size(); i++) {
-        std::cout << "Neighbor count " << i << ": " << counts[i] << std::endl;
+        v.nx /= weight;
+        v.ny /= weight;
+        v.nz /= weight;
+        v.tx = Dr::Clamp(v.tx/weight, 0.f, 1.f);
+        v.ty = Dr::Clamp(v.ty/weight, 0.f, 1.f);;
+        
+        // Set all same points to new averaged point
+        for(auto point : same_points) {
+            DrMesh::set(v, smoothed[point]);            
+        }
     }
 
     // ***** Set smoothed vertices
-    for (size_t i = 0; i < vertices.size(); i++) set(i, smoothed[i]);
-}
+    for (size_t i = 0; i < vertices.size(); i++) {
+        DrMesh::set(smoothed[i], vertices[i]);
+    }
 
+    // ***** Reset barycentric coordinates
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        vertices[indices[i+0]].bx = 1;
+        vertices[indices[i+0]].by = 0;
+        vertices[indices[i+0]].bz = 0;
+        vertices[indices[i+1]].bx = 0;
+        vertices[indices[i+1]].by = 1;
+        vertices[indices[i+1]].bz = 0;
+        vertices[indices[i+2]].bx = 0;
+        vertices[indices[i+2]].by = 0;
+        vertices[indices[i+2]].bz = 1;
+    }
+}
 
 
 
@@ -329,40 +382,36 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
     }
     testpolys.push_back( poly );
 
-    // ***** Run triangulation
-    TPPLPartition pp;
-    switch (type) {
-        // Can handle holes, hole should be in counter clockwise order
-        case Trianglulation::Ear_Clipping:  {
-            for (auto hole : hole_list) {
-                Winding_Orientation winding = DrPolygonF::findWindingOrientation(hole);
-                if (winding == Winding_Orientation::CounterClockwise) {
-                    std::reverse(hole.begin(), hole.end());
-                    std::cout << "Reversing hole points!" << std::endl;
-                }
-                TPPLPoly poly; 
-                poly.Init(hole.size());
-                poly.SetHole(true);
-                for (int i = 0; i < static_cast<int>(hole.size()); i++) {
-                    poly[i].x = hole[i].x;
-                    poly[i].y = hole[i].y;
-                }
-                testpolys.push_back(poly);
-            }
-            std::list<TPPLPoly> outpolys;
-            pp.RemoveHoles(&testpolys, &outpolys);
-            pp.Triangulate_EC(&outpolys, &result);       
-            break;
+    // ***** Remove holes
+    for (auto hole : hole_list) {
+        Winding_Orientation winding = DrPolygonF::findWindingOrientation(hole);
+        if (winding == Winding_Orientation::CounterClockwise) {
+            std::reverse(hole.begin(), hole.end());
+            std::cout << "Reversing hole points!" << std::endl;
         }
-        // Can not handle holes
-        case Trianglulation::Monotone:         
-            pp.Triangulate_MONO(&testpolys, &result);       
-            break; 
-        // Can handle holes, occasionaly polygons dont line up perfect
+        TPPLPoly poly; 
+        poly.Init(hole.size());
+        poly.SetHole(true);
+        for (int i = 0; i < static_cast<int>(hole.size()); i++) {
+            poly[i].x = hole[i].x;
+            poly[i].y = hole[i].y;
+        }
+        testpolys.push_back(poly);
+    }
+    TPPLPartition pp;
+    std::list<TPPLPoly> outpolys;
+    pp.RemoveHoles(&testpolys, &outpolys);
+
+
+    // ***** Run triangulation
+    switch (type) {
+        case Trianglulation::Ear_Clipping:      pp.Triangulate_EC(&outpolys, &result);                  break;
+        case Trianglulation::Triangulate_Opt:   pp.Triangulate_OPT(&(*outpolys.begin()), &result);      break;
+        case Trianglulation::Monotone:          pp.Triangulate_MONO(&outpolys, &result);                break; 
         case Trianglulation::Delaunay:
             result.push_back( poly );                       
-            //pp.ConvexPartition_OPT(&(*testpolys.begin()), &result);
-            //pp.ConvexPartition_HM(&(*testpolys.begin()), &result);
+            //pp.ConvexPartition_OPT(&(*outpolys.begin()), &result);
+            //pp.ConvexPartition_HM(&(*outpolys.begin()), &result);
             break;
     }
 
@@ -423,24 +472,27 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
             for (int i = (x_add / 2); i < width; i += x_add) {
                 for (int j = (y_add / 2); j < height; j += y_add) {
 
-                    // Scan a grid around point to see if close to border
-                    int x_start = i - x_add; if (x_start < 0) x_start = 0;
-                    int x_end   = i + x_add; if (x_end > width - 1) x_end = width - 1;
-                    int y_start = j - y_add; if (y_start < 0) y_start = 0;
-                    int y_end   = j + y_add; if (y_end > height - 1) y_end = height - 1;
-                    float total = 0, solid = 0;
-                    for (int x = x_start; x <= x_end; x++) {
-                        for (int y = y_start; y <= y_end; y++) {
-                            if (image.getPixel(x, y).alphaF() >= alpha_tolerance) solid++;
-                            total++;
-                        }
-                    }
+                    //// Scan a grid around point to see if close to border
+                    // int x_start = i - x_add; if (x_start < 0) x_start = 0;
+                    // int x_end   = i + x_add; if (x_end > width - 1) x_end = width - 1;
+                    // int y_start = j - y_add; if (y_start < 0) y_start = 0;
+                    // int y_end   = j + y_add; if (y_end > height - 1) y_end = height - 1;
+                    // float total = 0, solid = 0;
+                    // for (int x = x_start; x <= x_end; x++) {
+                    //     for (int y = y_start; y <= y_end; y++) {
+                    //         if (image.getPixel(x, y).alphaF() >= alpha_tolerance) solid++;
+                    //         total++;
+                    //     }
+                    // }
+                    // float percent_solid = solid / total;
+                    // if ((image.getPixel(i, j).alphaF() >= alpha_tolerance) && (solid != total)) {
+                    //     coords.push_back(i);
+                    //     coords.push_back(j);
+                    // }
 
-                    float percent_solid = solid / total;
-                    if ((image.getPixel(i, j).alphaF() >= alpha_tolerance) && (solid != total)) {
-                        coords.push_back(i);
-                        coords.push_back(j);
-                    }
+                    // OR:
+                    coords.push_back(i);
+                    coords.push_back(j);
                 }
             }
         }

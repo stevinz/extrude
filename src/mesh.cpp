@@ -67,21 +67,21 @@ void DrMesh::add(const DrVec3 &vertex, const DrVec3 &normal, const DrVec2 &text_
     vertices.push_back(v);
 }
 
-void DrMesh::set(unsigned int vertex_position, Vertex vertex) {
-    vertices[vertex_position].px = vertex.px;
-    vertices[vertex_position].py = vertex.py;
-    vertices[vertex_position].pz = vertex.pz;
+void DrMesh::set(Vertex &from_vertex, Vertex &to_vertex) {
+    to_vertex.px = from_vertex.px;
+    to_vertex.py = from_vertex.py;
+    to_vertex.pz = from_vertex.pz;
 
-    vertices[vertex_position].nx = vertex.nx;
-    vertices[vertex_position].ny = vertex.ny;
-    vertices[vertex_position].nz = vertex.nz;
+    to_vertex.nx = from_vertex.nx;
+    to_vertex.ny = from_vertex.ny;
+    to_vertex.nz = from_vertex.nz;
 
-    vertices[vertex_position].tx = vertex.tx;
-    vertices[vertex_position].ty = vertex.ty;
+    to_vertex.tx = from_vertex.tx;
+    to_vertex.ty = from_vertex.ty;
 
-    vertices[vertex_position].bx = vertex.bx;
-    vertices[vertex_position].by = vertex.by;
-    vertices[vertex_position].bz = vertex.bz;
+    to_vertex.bx = from_vertex.bx;
+    to_vertex.by = from_vertex.by;
+    to_vertex.bz = from_vertex.bz;
 }
 
 

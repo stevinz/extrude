@@ -96,6 +96,7 @@ public:
     DrVec3          normalized() const;
     float           normalize();
     float           norm() const;
+    float           distance    (const DrVec3 &v_) const;   
 
     // Accessors
     const float& operator[]     (int i) const;
