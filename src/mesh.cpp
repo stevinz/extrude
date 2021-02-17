@@ -7,8 +7,6 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
-#include <iostream>
-
 #include "3rd_party/handmade_math.h"
 #include "compare.h"
 #include "mesh.h"

@@ -109,10 +109,17 @@ namespace Dr {
 
     // Round to next power of 2 (see bit-twiddling-hacks)
     template<class T> int   RoundPowerOf2(T number) {
-        uint32_t vi = static_cast<uint32_t>(number) - 1; 
-        for (uint32_t i = 0; i < 5; i++) { 
-            vi |= (vi >> (1 << i)); 
-        }
+        #if __EMSCRIPTEN__
+            unsigned int vi = static_cast<unsigned int>(number) - 1; 
+            for (unsigned int i = 0; i < 5; i++) { 
+                vi |= (vi >> (1 << i)); 
+            }
+        #else
+            uint32_t vi = static_cast<uint32_t>(number) - 1; 
+            for (uint32_t i = 0; i < 5; i++) { 
+                vi |= (vi >> (1 << i)); 
+            }
+        #endif
         return static_cast<int>(vi + 1);
     }
 

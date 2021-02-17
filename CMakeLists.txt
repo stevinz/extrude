@@ -9,7 +9,7 @@
 #
 ##################################################################
 
-set(ExportTarget "mac")
+set(ExportTarget "web")
 
 ##################################################################
 cmake_minimum_required(VERSION 3.10)
@@ -92,14 +92,15 @@ if (ExportTarget MATCHES "mac")
     target_link_libraries(${PROJECT_NAME} ${AUDIOKIT_LIBRARY})
 
 elseif (ExportTarget MATCHES "web")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 --shell-file ../shell.html")
+    # To Optimze file size: -O2, fast but good, -O3 better, -Os is the smallest
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os -std=c++11 --shell-file ../shell.html") 
     set(CMAKE_C_COMPILER "emcc")
     set(CMAKE_CXX_COMPILER "emcc")
     SET(CMAKE_EXECUTABLE_SUFFIX ".html")
 
     #set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --preload-file assets/shapes.png")
     #set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --embed-file assets/shapes.png")
-    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind")
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind -s ALLOW_MEMORY_GROWTH=1")
 
     # -s WASM=0                         force javascript or
     # -s WASM=1                         use webassembly

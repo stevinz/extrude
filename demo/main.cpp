@@ -22,8 +22,6 @@
 #include "../src/types/rect.h"
 #include "../src/types/vec2.h"
 
-#include <iostream>
-
 #include "3rd_party/sokol/sokol_app.h"
 #include "3rd_party/sokol/sokol_gfx.h"
 #include "3rd_party/sokol/sokol_gl.h"
@@ -313,15 +311,12 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         //mesh->initializeTextureQuad();
         //mesh->initializeTextureCube();
         //mesh->initializeTextureCone();
-        std::cout << "Triangle count: " << (mesh->indexCount() / 3) << std::endl;
-      
-
+             
         // ********** Copy vertex data and set into state buffer
         if (mesh->vertexCount() > 0) {
             // ***** Vertex Buffer
             unsigned int total_vertices = mesh->vertices.size();
 
-            std::cout << "Vertices count: " << total_vertices << std::endl;
             Vertex vertices[total_vertices];
             for (size_t i = 0; i < total_vertices; i++) vertices[i] = mesh->vertices[i];
             sg_buffer_desc (sokol_buffer_vertex) {
@@ -333,8 +328,6 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
 
             // ***** Index Buffer
             unsigned int total_indices = mesh->indices.size();
-
-            std::cout << "Indices count: " << total_indices << std::endl;
             uint16_t indices[total_indices];
             for (size_t i = 0; i < total_indices; i++) indices[i] = mesh->indices[i];
             sg_buffer_desc (sokol_buffer_index) {
@@ -396,7 +389,7 @@ static void image_loaded(const sfetch_response_t* response) {
             sg_pass_action (pass_action4) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 1.0f, 0.0f, 1.0f } } };        // yellow
             sg_pass_action (pass_action5) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.0f, 1.0f, 1.0f, 1.0f } } };        // cyan
             sg_pass_action (pass_action6) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 0.0f, 1.0f, 1.0f } } };        // magenta
-            sg_pass_action (pass_action7) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.0f, 0.0f, 0.0f, 1.0f } } };        // black
+            sg_pass_action (pass_action7) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.5f, 0.5f, 0.5f, 1.0f } } };        // black
     
             switch (response->error_code) {
                 case SFETCH_ERROR_NO_ERROR:             state.pass_action = (pass_action0);     break;
@@ -571,7 +564,6 @@ static void frame(void) {
     const float dpis = state.dpi_scale;
     FONScontext* fs = state.fons;
 
-    static int draw_font = 0;
     if (state.font_normal != FONS_INVALID) {
         fonsSetAlign(fs, FONS_ALIGN_LEFT | FONS_ALIGN_BASELINE);
         fonsSetFont(fs, state.font_normal);
@@ -580,11 +572,8 @@ static void frame(void) {
         fonsSetBlur(fs, 0);
         fonsSetSpacing(fs, 0.0f);
         fonsDrawText(fs, 10 * dpis, 20 * dpis, ("FPS: " +  std::to_string(fps)).c_str(), NULL);
-        fonsDrawText(fs, 10 * dpis, 40 * dpis, ("ZOOM: " + std::to_string(zoom)).c_str(), NULL);
-        if (draw_font == 0) {
-            draw_font = 1;
-            std::cout << "Drawed it!!!";
-        }
+        fonsDrawText(fs, 10 * dpis, 40 * dpis, ("Triangle count: " + std::to_string(mesh->indexCount() / 3)).c_str(), NULL);
+        //fonsDrawText(fs, 10 * dpis, 60 * dpis, ("ZOOM: " + std::to_string(zoom)).c_str(), NULL);
     }
     sfons_flush(fs);            // Flush fontstash's font atlas to sokol-gfx texture
     sgl_draw();

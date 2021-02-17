@@ -7,8 +7,6 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
-#include <iostream>
-
 #include "../3rd_party/stb/stb_image.h"
 #include "../3rd_party/stb/stb_image_resize.h"
 #include "../3rd_party/stb/stb_image_write.h"
@@ -148,7 +146,6 @@ void DrBitmap::loadFromFile(std::string filename) {
 
     // Error Check
     if (ptr == nullptr || width == 0 || height == 0) {
-        std::cout << "stbi_load_from_file error!" << std::endl; 
         width = 0; height = 0; 
         return;
     }
@@ -174,7 +171,6 @@ void DrBitmap::loadFromMemory(const unsigned char *from_data, const int &number_
 
         // Error Check
         if (ptr == nullptr || width == 0 || height == 0) {
-            std::cout << "stbi_load_from_memory error!" << std::endl;
             width = 0; height = 0; 
             return;
         }

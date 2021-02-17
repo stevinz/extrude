@@ -7,8 +7,6 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
-#include <iostream>
-
 #include "../3rd_party/polyline_simplification.h"
 #include "../compare.h"
 #include "../imaging.h"
@@ -78,7 +76,7 @@ void DrImage::autoOutlinePoints(float lod) {
     bool    cancel = Dr::FindObjectsInBitmap(m_bitmap, bitmaps, rects, c_alpha_tolerance, true);
     int     number_of_objects = static_cast<int>(bitmaps.size());
 
-    std::cout << "Number of objects in image: " << number_of_objects << std::endl;
+    //std::cout << "Number of objects in image: " << number_of_objects << std::endl;
 
     // ***** If Find Objects In Bitmap never finished, just add simple box shape
     if (cancel) { setSimpleBox(); return; }

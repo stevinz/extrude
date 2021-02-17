@@ -8,7 +8,6 @@
 //
 //
 #include <algorithm>
-#include <iostream>
 #include <limits>
 #include <list>
 #include <vector>
@@ -388,7 +387,6 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
         Winding_Orientation winding = DrPolygonF::findWindingOrientation(hole);
         if (winding == Winding_Orientation::CounterClockwise) {
             std::reverse(hole.begin(), hole.end());
-            std::cout << "Reversing hole points!" << std::endl;
         }
         TPPLPoly poly; 
         poly.Init(hole.size());
@@ -436,11 +434,7 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
             triangle( x1, y1, tx1, ty1,
                       x3, y3, tx3, ty3,
                       x2, y2, tx2, ty2);
-
-            //std::cout << " X1: " <<  x1 << ",  Y1: " <<  y1 << ",  X2: " <<  x2 << ",  Y2: " <<  y2 << ",  X3: " <<  x3 << ",  Y3: " <<  y3 << std::endl;                    
-            //std::cout << "TX1: " << tx1 << ", TY1: " << ty1 << ", TX2: " << tx2 << ", TY2: " << ty2 << ", TX3: " << tx3 << ", TY3: " << ty3 << std::endl;
         }
-        std::cout << "Processed " << result.size() << " triangles..." << std::endl;
 
 
     // ***** After splitting concave hull into convex polygons, add Delaunay Triangulation to vertex data
