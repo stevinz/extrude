@@ -33,5 +33,3 @@
 #include "3rd_party/stb/stb_image_write.h"
 
 
-
-

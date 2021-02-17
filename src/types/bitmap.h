@@ -20,8 +20,10 @@ class DrPolygonF;
 class DrRect;
 
 // Local constants
-const int   c_number_channels = 4;
-
+enum Bitmap_Format {
+    Grayscale = 1,
+    ARGB =      4,
+};
 
 //####################################################################################
 //##    DrBitmap
@@ -30,7 +32,9 @@ const int   c_number_channels = 4;
 class DrBitmap
 {
 public:
-    int     channels =  c_number_channels;          // Number of 8-bit components per pixel: R, G, B, A
+    Bitmap_Format format = Bitmap_Format::ARGB;     // Bitmap format
+
+    int     channels =  4;                          // Number of 8-bit components per pixel (default is 4: R, G, B, A
     int     width =     0;                          // Image width
     int     height =    0;                          // Image height
 
@@ -39,11 +43,11 @@ public:
 
 public:
     // Constructors
-    DrBitmap();
+    DrBitmap(Bitmap_Format desired_format = Bitmap_Format::ARGB);
     ~DrBitmap();
-    DrBitmap(const DrBitmap &bitmap);
-    DrBitmap(int width_, int height_);
-    DrBitmap(std::string filename);
+    DrBitmap(const DrBitmap &bitmap, Bitmap_Format desired_format = Bitmap_Format::ARGB);
+    DrBitmap(int width_, int height_, Bitmap_Format desired_format = Bitmap_Format::ARGB);
+    DrBitmap(std::string filename, Bitmap_Format desired_format = Bitmap_Format::ARGB);
     DrBitmap(const unsigned char *from_data, const int &number_of_bytes,
              bool compressed = true, int width_ = 0, int height_ = 0);
 
@@ -62,7 +66,7 @@ public:
     void    fuzzyAlpha();
 
     // Image Loaders
-    void    loadFromFile(std::string filename);
+    void    loadFromFile(std::string filename, Bitmap_Format desired_format = Bitmap_Format::ARGB);
     void    loadFromMemory(const unsigned char *compressed_data, const int &number_of_bytes,
                            bool compressed = true, int width_ = 0, int height_ = 0);
 

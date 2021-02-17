@@ -41,12 +41,12 @@ bool CompareBitmaps(const DrBitmap &bitmap1, const DrBitmap &bitmap2) {
 //##        NORMAL  (inverse == false): transparent areas are black, objects are white
 //##        INVERSE (inverse == true) : transparent areas are white, objects are black
 //####################################################################################
-DrBitmap BlackAndWhiteFromAlpha(const DrBitmap &bitmap, double alpha_tolerance, bool inverse) {
+DrBitmap BlackAndWhiteFromAlpha(const DrBitmap &bitmap, double alpha_tolerance, bool inverse, Bitmap_Format desired_format) {
     DrColor color1 = Dr::transparent;
     DrColor color2 = Dr::white;
     if (inverse) Dr::Swap(color1, color2);
 
-    DrBitmap black_white(bitmap);
+    DrBitmap black_white(bitmap, desired_format);
     int alpha_i = static_cast<int>(alpha_tolerance * 255.0);
 
     for (int x = 0; x < bitmap.width; ++x) {

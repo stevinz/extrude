@@ -44,7 +44,8 @@ namespace Dr {
     bool        CompareBitmaps(const DrBitmap &bitmap1, const DrBitmap &bitmap2);
 
     // ***** Object Counting / Fill (a la Ravens Project)
-    DrBitmap    BlackAndWhiteFromAlpha(const DrBitmap &bitmap, double alpha_tolerance, bool inverse);
+    DrBitmap    BlackAndWhiteFromAlpha(const DrBitmap &bitmap, double alpha_tolerance, bool inverse, 
+                                       Bitmap_Format desired_format = Bitmap_Format::ARGB);
     void        FillBorder(DrBitmap &bitmap, DrColor fill_color, DrRect rect);
     bool        FindObjectsInBitmap(const DrBitmap &bitmap, std::vector<DrBitmap> &bitmaps, std::vector<DrRect> &rects, 
                                     double alpha_tolerance, bool convert = true);

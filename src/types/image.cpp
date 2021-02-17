@@ -33,8 +33,8 @@ DrImage::DrImage(std::string image_name, DrBitmap &bitmap, float lod, bool outli
     if (outline) {
         autoOutlinePoints(lod);
     } else {
-        m_poly_list.push_back( bitmap.polygon().points() );
-        m_hole_list.push_back( { } );
+        m_poly_list.push_back(bitmap.polygon().points());
+        m_hole_list.push_back({});
     }
 }
 

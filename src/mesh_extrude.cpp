@@ -14,6 +14,7 @@
 
 #include "3rd_party/delaunator.h"
 #include "3rd_party/mesh_optimizer/meshoptimizer.h"
+#include "3rd_party/par_msquares.h"
 #include "3rd_party/poly_partition.h"
 #include "3rd_party/polyline_simplification.h"
 #include "compare.h"
@@ -25,14 +26,18 @@
 #include "types/pointf.h"
 #include "types/polygonf.h"
 
+#include <iostream>
 
 //####################################################################################
 //##    Builds an Extruded DrImage Model
 //####################################################################################
 void DrMesh::initializeExtrudedImage(DrImage *image) {
 
+    int w = image->getBitmap().width;
+    int h = image->getBitmap().height;
+
     for (int poly_number = 0; poly_number < static_cast<int>(image->m_poly_list.size()); poly_number++) {
-        if (image->getBitmap().width < 1 || image->getBitmap().height < 1) continue;
+        if (w < 1 || h < 1) continue;
 
         // ***** Triangulate Concave Hull
         std::vector<DrPointF>              &points =    image->m_poly_list[poly_number];
@@ -40,25 +45,24 @@ void DrMesh::initializeExtrudedImage(DrImage *image) {
 
         // ***** Pick ONE of the following three
         double alpha_tolerance = (image->m_outline_processed) ? c_alpha_tolerance : 0.0;
-        //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Ear_Clipping, alpha_tolerance);
         triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Triangulate_Opt, alpha_tolerance);
+        //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Ear_Clipping, alpha_tolerance)
         //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Monotone, alpha_tolerance);
         //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Delaunay, alpha_tolerance);
 
         // ***** Add extruded triangles from Hull and Holes
         int slices = wireframe ? 3 : 1;
-        extrudeFacePolygon(points, image->getBitmap().width, image->getBitmap().height, slices);
+        extrudeFacePolygon(points, w, h, slices);
         for (auto &hole : hole_list) {
-            extrudeFacePolygon(hole, image->getBitmap().width, image->getBitmap().height, slices);
+            extrudeFacePolygon(hole, w, h, slices);
         }
     }
 
     // Optimize and smooth mesh
     optimizeMesh();
 
-    //for (int i = 0; i < 2; i++) {
-    //    smoothMesh();                               // <--- Experimental, doesnt work yet
-    //}
+    // ----- Experimental, doesnt work great -----
+    //smoothMesh();                               
 }
 
 
@@ -96,7 +100,6 @@ void DrMesh::optimizeMesh() {
 //##    Smooth Mesh
 //####################################################################################
 void DrMesh::smoothMesh() {
-
     std::vector<int> counts;
     counts.resize(11);
 
@@ -148,11 +151,11 @@ void DrMesh::smoothMesh() {
         neighbors.unique();
 
         // ***** Average with neighbors
-        float weight = 5.0;
+        float weight = 1.0;
         Vertex v = vertices[one_vertex];
         Vertex o = vertices[one_vertex];
         v.px *= weight;
-        v.py *= weight;
+        v.py *= weight;           
         v.pz *= weight;
         v.nx *= weight;
         v.ny *= weight;
@@ -160,7 +163,10 @@ void DrMesh::smoothMesh() {
         v.tx *= weight;
         v.ty *= weight;
         for(auto n : neighbors) {
-            float d = 10.0 / abs(DrVec3(o.px, o.py, o.pz).distance({vertices[n].px, vertices[n].py, vertices[n].pz}));
+            // Add neighbor diminished by distance
+            float edge_length = DrVec3(o.px, o.py, o.pz).distance({vertices[n].px, vertices[n].py, vertices[n].pz});
+            if (edge_length ==0) edge_length = std::numeric_limits<float>::epsilon();
+            float d = 1.f / edge_length;
             v.px += (vertices[n].px * d);
             v.py += (vertices[n].py * d);
             v.pz += (vertices[n].pz * d);
@@ -178,8 +184,13 @@ void DrMesh::smoothMesh() {
         v.ny /= weight;
         v.nz /= weight;
         v.tx = Dr::Clamp(v.tx/weight, 0.f, 1.f);
-        v.ty = Dr::Clamp(v.ty/weight, 0.f, 1.f);;
-        
+        v.ty = Dr::Clamp(v.ty/weight, 0.f, 1.f);
+
+        DrVec3 normal = DrVec3(v.nx, v.ny, v.nz).normalized();
+        v.nx = normal.x;
+        v.ny = normal.y;
+        v.nz = normal.z;
+                
         // Set all same points to new averaged point
         for(auto point : same_points) {
             DrMesh::set(v, smoothed[point]);            
@@ -383,7 +394,9 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
     testpolys.push_back( poly );
 
     // ***** Remove holes
+    int hole_count = 0;
     for (auto hole : hole_list) {
+        int point_count = 0;
         Winding_Orientation winding = DrPolygonF::findWindingOrientation(hole);
         if (winding == Winding_Orientation::CounterClockwise) {
             std::reverse(hole.begin(), hole.end());
@@ -394,12 +407,22 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
         for (int i = 0; i < static_cast<int>(hole.size()); i++) {
             poly[i].x = hole[i].x;
             poly[i].y = hole[i].y;
+            point_count++;
         }
-        testpolys.push_back(poly);
+        if (point_count >= 3) {
+            testpolys.push_back(poly);
+            hole_count++;
+        }
     }
+    
     TPPLPartition pp;
     std::list<TPPLPoly> outpolys;
-    pp.RemoveHoles(&testpolys, &outpolys);
+
+    if (hole_count > 0) {
+        pp.RemoveHoles(&testpolys, &outpolys);
+    } else {
+        outpolys = testpolys;
+    }
 
 
     // ***** Run triangulation
@@ -459,15 +482,20 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
 
         // Add some uniform points, 4 points looks great and keeps triangles low
         if (wireframe) {
-            int x_add, y_add;
-            x_add = Dr::Min(10, width  / 20);
-            y_add = Dr::Min(10, height / 20);
+            
+            int x_add = 8;
+            int y_add = 8;
+            while (width  % x_add != 0) x_add--;
+            while (height % y_add != 0) y_add--;
+            //x_add = Dr::Max(1, width  / 16);
+            //y_add = Dr::Max(1, height / 16);
+
             if (x_add < 1) x_add = 1;
             if (y_add < 1) y_add = 1;
             for (int i = (x_add / 2); i < width; i += x_add) {
                 for (int j = (y_add / 2); j < height; j += y_add) {
 
-                    //// Scan a grid around point to see if close to border
+                    //// -- Scan a grid around point to see if close to border --
                     // int x_start = i - x_add; if (x_start < 0) x_start = 0;
                     // int x_end   = i + x_add; if (x_end > width - 1) x_end = width - 1;
                     // int y_start = j - y_add; if (y_start < 0) y_start = 0;
@@ -485,9 +513,11 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
                     //     coords.push_back(j);
                     // }
 
-                    // OR:
-                    coords.push_back(i);
-                    coords.push_back(j);
+                    // -- OR --:
+                    if (image.getPixel(i, j).alphaF() >= alpha_tolerance) {
+                        coords.push_back(i);
+                        coords.push_back(j);
+                    }
                 }
             }
         }
@@ -509,7 +539,6 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
         }
         if (no_duplicates.size() < 6) return;                                           // We need at least 3 points!!
 
-
         // Run triangulation, add triangles to vertex data
         Delaunator d(no_duplicates);
 
@@ -529,9 +558,9 @@ void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const 
             DrPoint mid13((x1 + x3) / 2.0, (y1 + y3) / 2.0);
             DrPointF centroid((x1 + x2 + x3) / 3.0, (y1 + y2 + y3) / 3.0);
             int transparent_count = 0;
-            if (image.getPixel(mid12.x, mid12.y).alphaF() < alpha_tolerance) ++transparent_count;
-            if (image.getPixel(mid23.x, mid23.y).alphaF() < alpha_tolerance) ++transparent_count;
-            if (image.getPixel(mid13.x, mid13.y).alphaF() < alpha_tolerance) ++transparent_count;
+            if (getRoundedPixel(image, DrPointF(mid12.x, mid12.y)).alphaF() < alpha_tolerance) ++transparent_count;
+            if (getRoundedPixel(image, DrPointF(mid23.x, mid23.y)).alphaF() < alpha_tolerance) ++transparent_count;
+            if (getRoundedPixel(image, DrPointF(mid13.x, mid13.y)).alphaF() < alpha_tolerance) ++transparent_count;
             double avg_c = averageTransparentPixels(image, centroid, alpha_tolerance);
             if (avg_c > 0.9999) continue;                                               // #NOTE: 0.9999 is 9 out of 9 pixels are transparent
             if (avg_c > 0.6666) ++transparent_count;                                    // #NOTE: 0.6666 is 6 out of 9 pixels are transparent
