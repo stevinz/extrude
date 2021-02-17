@@ -98,9 +98,10 @@ elseif (ExportTarget MATCHES "web")
     set(CMAKE_CXX_COMPILER "emcc")
     SET(CMAKE_EXECUTABLE_SUFFIX ".html")
 
-    #set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --preload-file assets/shapes.png")
-    #set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind --embed-file assets/shapes.png")
-    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind -s ALLOW_MEMORY_GROWTH=1")
+    #   --preload-file assets/shapes.png"       # To allow access to local filesystem
+    #   --embed-file assets/shapes.png"         # To embed in js file, not compatible yet with sokol_app
+    #   -s ALLOW_MEMORY_GROWTH=1                # To allow for dynamic memory access
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind ")
 
     # -s WASM=0                         force javascript or
     # -s WASM=1                         use webassembly
