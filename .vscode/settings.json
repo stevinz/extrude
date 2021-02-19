@@ -73,6 +73,5 @@
         "typeinfo": "cpp",
         "unordered_map": "cpp",
         "utility": "cpp"
-    },
-    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+    }
 }

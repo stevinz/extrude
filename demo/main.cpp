@@ -33,6 +33,9 @@
 #include "3rd_party/sokol/sokol_fontstash.h"
 #ifndef __EMSCRIPTEN__
     #include "3rd_party/wai/whereami.c"
+#else
+    #include <emscripten/emscripten.h>
+    #include <emscripten/html5.h>
 #endif
 
 #include "input.h"
@@ -81,12 +84,15 @@ struct state_t {
 //##    Globals
 //################################################################################
 // Sokol Variables
+sapp_desc sokol_app;
 static state_t state;
 
 // Image Variables
 std::shared_ptr<DrMesh> mesh = std::make_shared<DrMesh>();
 std::shared_ptr<DrImage> image = nullptr;
 bool initialized_image = false;
+int  mesh_quality = 5;
+int  before_keys = mesh_quality;
 
 // FPS Variables
 uint64_t time_start = 0;
@@ -101,6 +107,7 @@ DrVec2      mouse_down =    { 0, 0 };
 float       rotate_speed =  1.f;
 bool        is_mouse_down = false;
 float       zoom = 1.5f;
+bool        wireframe = true;
 
 
 //################################################################################
@@ -286,6 +293,74 @@ void init(void) {
 }
 
 
+
+//################################################################################
+//##    Create 3D extrusion
+//################################################################################
+void calculateMesh(bool reset_position) {
+    //##    Level of Detail:
+    //##        0.075 = Detailed
+    //##        0.250 = Nice
+    //##        1.000 = Low poly
+    //##       10.000 = Really low poly
+    float level_of_detail = 0.6f;
+    switch (mesh_quality) {
+        case 0: level_of_detail = 19.200f;  break;
+        case 1: level_of_detail =  9.600f;  break;
+        case 2: level_of_detail =  4.800f;  break;
+        case 3: level_of_detail =  2.400f;  break;
+        case 4: level_of_detail =  1.200f;  break;
+        case 5: level_of_detail =  0.600f;  break;
+        case 6: level_of_detail =  0.300f;  break;
+        case 7: level_of_detail =  0.150f;  break;
+        case 8: level_of_detail =  0.075f;  break;
+    }
+
+    // ***** Initialize Mesh
+    image->outlinePoints(level_of_detail);
+    mesh = std::make_shared<DrMesh>();
+    mesh->image_size = Dr::Max(image->getBitmap().width, image->getBitmap().height);      
+    mesh->wireframe = wireframe;
+    mesh->initializeExtrudedImage(image.get(), mesh_quality);
+    //mesh->initializeTextureQuad();
+    //mesh->initializeTextureCube();
+    //mesh->initializeTextureCone();
+             
+    // ***** Copy vertex data and set into state buffer
+    if (mesh->vertexCount() > 0) {
+        // ***** Vertex Buffer
+        unsigned int total_vertices = mesh->vertices.size();
+
+        Vertex vertices[total_vertices];
+        for (size_t i = 0; i < total_vertices; i++) vertices[i] = mesh->vertices[i];
+        sg_buffer_desc (sokol_buffer_vertex) {
+            .data = SG_RANGE(vertices),
+            .label = "extruded-vertices"
+        };
+        sg_destroy_buffer(state.bind.vertex_buffers[0]);
+        state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
+
+        // ***** Index Buffer
+        unsigned int total_indices = mesh->indices.size();
+        uint16_t indices[total_indices];
+        for (size_t i = 0; i < total_indices; i++) indices[i] = mesh->indices[i];
+        sg_buffer_desc (sokol_buffer_index) {
+            .type = SG_BUFFERTYPE_INDEXBUFFER,
+            .data = SG_RANGE(indices),
+            .label = "temp-indices"
+        };
+        sg_destroy_buffer(state.bind.index_buffer);
+        state.bind.index_buffer = sg_make_buffer(&(sokol_buffer_index));
+
+        // ***** Reset rotation
+        if (reset_position) {
+            total_rotation.set(0.f, 0.f);
+            add_rotation.set(25.f, 25.f);
+            model = Dr::IdentityMatrix();
+        }
+    }
+}
+
 //################################################################################
 //##    Load Image
 //################################################################################
@@ -302,48 +377,7 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         //bitmap = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, bitmap, Dr::RandomInt(-100, 100));
         image = std::make_shared<DrImage>("shapes", bitmap, 0.25f);
 
-
-        // ********** Create 3D extrusion
-        mesh = std::make_shared<DrMesh>();
-        mesh->image_size = Dr::Max(image->getBitmap().width, image->getBitmap().height);      
-        mesh->wireframe = true;
-        mesh->initializeExtrudedImage(image.get());
-        //mesh->initializeTextureQuad();
-        //mesh->initializeTextureCube();
-        //mesh->initializeTextureCone();
-             
-        // ********** Copy vertex data and set into state buffer
-        if (mesh->vertexCount() > 0) {
-            // ***** Vertex Buffer
-            unsigned int total_vertices = mesh->vertices.size();
-
-            Vertex vertices[total_vertices];
-            for (size_t i = 0; i < total_vertices; i++) vertices[i] = mesh->vertices[i];
-            sg_buffer_desc (sokol_buffer_vertex) {
-                .data = SG_RANGE(vertices),
-                .label = "extruded-vertices"
-            };
-            sg_destroy_buffer(state.bind.vertex_buffers[0]);
-            state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
-
-            // ***** Index Buffer
-            unsigned int total_indices = mesh->indices.size();
-            uint16_t indices[total_indices];
-            for (size_t i = 0; i < total_indices; i++) indices[i] = mesh->indices[i];
-            sg_buffer_desc (sokol_buffer_index) {
-                .type = SG_BUFFERTYPE_INDEXBUFFER,
-                .data = SG_RANGE(indices),
-                .label = "temp-indices"
-            };
-            sg_destroy_buffer(state.bind.index_buffer);
-            state.bind.index_buffer = sg_make_buffer(&(sokol_buffer_index));
-
-            // ***** Reset rotation
-            total_rotation.set(0.f, 0.f);
-            add_rotation.set(25.f, 25.f);
-            model = Dr::IdentityMatrix();
-        }
-        
+        calculateMesh(true);        
 
         // ********** Initialze the sokol-gfx texture
         sg_image_desc (sokol_image) {
@@ -444,12 +478,29 @@ static void input(const sapp_event* event) {
 
     if ((event->type == SAPP_EVENTTYPE_KEY_DOWN) && !event->key_repeat) {
         switch (event->key_code) {
+            case SAPP_KEYCODE_1: 
+            case SAPP_KEYCODE_2:
+            case SAPP_KEYCODE_3:
+            case SAPP_KEYCODE_4:
+            case SAPP_KEYCODE_5:
+            case SAPP_KEYCODE_6:
+            case SAPP_KEYCODE_7:
+            case SAPP_KEYCODE_8:
+            case SAPP_KEYCODE_9:
+                mesh_quality = event->key_code - SAPP_KEYCODE_1;
+                break;
+            case SAPP_KEYCODE_R:
+                total_rotation.set(0.f, 0.f);
+                add_rotation.set(25.f, 25.f);
+                model = Dr::IdentityMatrix();
+                break;
             case SAPP_KEYCODE_W:
                 mesh->wireframe = !mesh->wireframe;
+                wireframe = mesh->wireframe;
                 break;
             default: ;
         }
-
+                
     } else if (event->type == SAPP_EVENTTYPE_MOUSE_SCROLL) {
         zoom -= (event->scroll_y * 0.1f);
         zoom = Dr::Clamp(zoom, 0.5f, 5.0f);
@@ -514,6 +565,14 @@ static void input(const sapp_event* event) {
 //################################################################################
 //##    Render
 //################################################################################
+// Was playing with getting canvas size from html file to resize framebuffer when
+// canvas is resized. Went around adding to sokol_app by invoking 'resize' event
+// directly from javascript in the webpage on canvas resize.
+#if defined(__EMSCRIPTEN__)
+    EM_JS(int, get_canvas_width,  (), { return canvas.width; });
+    EM_JS(int, get_canvas_height, (), { return canvas.height; });
+#endif
+
 /* The frame-function is fairly boring, note that no special handling is
    needed for the case where the texture isn't loaded yet.
    Also note the sfetch_dowork() function, this is usually called once a
@@ -524,7 +583,7 @@ static void frame(void) {
     sfetch_dowork();
 
     // ***** Compute model-view-projection matrix for vertex shader
-    hmm_mat4 proj = HMM_Perspective(52.5f, (float)sapp_width()/(float)sapp_height(), 50.f, 20000.0f);
+    hmm_mat4 proj = HMM_Perspective(52.5f, (float)sapp_width()/(float)sapp_height(), 5.f, 20000.0f);
     hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, mesh->image_size * zoom), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
     hmm_mat4 view_proj = HMM_MultiplyMat4(proj, view);
 
@@ -545,6 +604,14 @@ static void frame(void) {
     // Uniforms for fragment shader
     fs_params_t fs_params;
     fs_params.u_wireframe = (mesh->wireframe) ? 1.0f : 0.0f;
+
+
+    // Check if user requested new model quality, if so recalculate
+    if (mesh_quality != before_keys) {
+        calculateMesh(false);
+        before_keys = mesh_quality;
+    }
+
 
     // ***** Render pass
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
@@ -572,8 +639,9 @@ static void frame(void) {
         fonsSetBlur(fs, 0);
         fonsSetSpacing(fs, 0.0f);
         fonsDrawText(fs, 10 * dpis, 20 * dpis, ("FPS: " +  std::to_string(fps)).c_str(), NULL);
-        fonsDrawText(fs, 10 * dpis, 40 * dpis, ("Triangle count: " + std::to_string(mesh->indexCount() / 3)).c_str(), NULL);
-        //fonsDrawText(fs, 10 * dpis, 60 * dpis, ("ZOOM: " + std::to_string(zoom)).c_str(), NULL);
+        fonsDrawText(fs, 10 * dpis, 40 * dpis, ("Quality: " + std::to_string(mesh_quality)).c_str(), NULL);
+        fonsDrawText(fs, 10 * dpis, 60 * dpis, ("Triangles: " + std::to_string(mesh->indexCount() / 3)).c_str(), NULL);
+        //fonsDrawText(fs, 10 * dpis, 80 * dpis, ("ZOOM: " + std::to_string(zoom)).c_str(), NULL);
     }
     sfons_flush(fs);            // Flush fontstash's font atlas to sokol-gfx texture
     sgl_draw();
@@ -613,18 +681,16 @@ sapp_desc sokol_main(int argc, char* argv[]) {
     (void)argc; 
     (void)argv;
 
-    sapp_desc sokol_app {
-        .window_title = "3D Extrusion",
-        .init_cb = init,
-        .frame_cb = frame,
-        .event_cb = input,
-        .cleanup_cb = cleanup,
-        .width = 800,
-        .height = 600,
-        .enable_clipboard = true,
-        .enable_dragndrop = true,
-        .max_dropped_files = 1,
-    };
+    sokol_app.window_title = "3D Extrusion";
+    sokol_app.init_cb = init;
+    sokol_app.frame_cb = frame;
+    sokol_app.event_cb = input;
+    sokol_app.cleanup_cb = cleanup;
+    sokol_app.width = 800;
+    sokol_app.height = 600;
+    sokol_app.enable_clipboard = true;
+    sokol_app.enable_dragndrop = true;
+    sokol_app.max_dropped_files = 1;
     return sokol_app;
 }
 

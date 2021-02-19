@@ -14,7 +14,6 @@
 
 #include "3rd_party/delaunator.h"
 #include "3rd_party/mesh_optimizer/meshoptimizer.h"
-#include "3rd_party/par_msquares.h"
 #include "3rd_party/poly_partition.h"
 #include "3rd_party/polyline_simplification.h"
 #include "compare.h"
@@ -31,7 +30,7 @@
 //####################################################################################
 //##    Builds an Extruded DrImage Model
 //####################################################################################
-void DrMesh::initializeExtrudedImage(DrImage *image) {
+void DrMesh::initializeExtrudedImage(DrImage *image, int quality) {
 
     int w = image->getBitmap().width;
     int h = image->getBitmap().height;
@@ -50,8 +49,11 @@ void DrMesh::initializeExtrudedImage(DrImage *image) {
         //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Monotone, alpha_tolerance);
         //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Delaunay, alpha_tolerance);
 
+        // !!!!! #TODO: For greatly improved Trianglulation::Delaunay, break polygon into convex polygons before running algorithm
+
         // ***** Add extruded triangles from Hull and Holes
-        int slices = wireframe ? 3 : 1;
+        //int slices = wireframe ? 3 : 1;
+        int slices = (quality / 3) + 1;
         extrudeFacePolygon(points, w, h, slices);
         for (auto &hole : hole_list) {
             extrudeFacePolygon(hole, w, h, slices);
@@ -323,6 +325,8 @@ std::vector<DrPointF> DrMesh::smoothPoints(const std::vector<DrPointF> &outline_
 
 //####################################################################################
 //##    Inserts extra points in between set of points
+//##        Useful for adding points before a smoothing function to add weight to the
+//##        middle of ong straight sections
 //####################################################################################
 std::vector<DrPointF> DrMesh::insertPoints(const std::vector<DrPointF> &outline_points) {
     std::vector<DrPointF> insert_points { };

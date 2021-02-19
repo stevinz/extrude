@@ -9,9 +9,22 @@
 #
 ##################################################################
 
-set(ExportTarget "mac")
+
+set(ExportTarget "web")
+
 
 ##################################################################
+if     (EXPORT_TARGET MATCHES "mac") 
+    add_compile_definitions(TARGET_MAC)
+elseif (EXPORT_TARGET MATCHES "web") 
+    add_compile_definitions(TARGET_WEB)
+elseif (EXPORT_TARGET MATCHES "win") 
+    add_compile_definitions(TARGET_WIN)
+elseif (EXPORT_TARGET MATCHES "lin") 
+    add_compile_definitions(TARGET_LIN)
+endif()
+
+# set cmake version
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name
@@ -64,11 +77,10 @@ add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E 
 if (ExportTarget MATCHES "mac")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -xobjective-c -fobjc-arc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fobjc-arc")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit -framework Foundation")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Metal -framework MetalKit -framework AudioToolbox")
     set(CMAKE_C_COMPILER "gcc")
     set(CMAKE_CXX_COMPILER "g++")
-
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework IOKit -framework Foundation")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Metal -framework MetalKit -framework AudioToolbox")
     find_library(COCOA_LIBRARY Cocoa REQUIRED)
     find_library(IOKIT_LIBRARY IOKit REQUIRED)
     find_library(OPENGL_LIBRARY OpenGL REQUIRED)

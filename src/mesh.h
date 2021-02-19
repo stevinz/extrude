@@ -89,7 +89,7 @@ public:
     int             vertexCount() const     { return vertices.size(); }
 
     // Creation Functions
-    void    initializeExtrudedImage(DrImage *image);
+    void    initializeExtrudedImage(DrImage *image, int quality);
     void    initializeTextureCone();
     void    initializeTextureCube();
     void    initializeTextureQuad();

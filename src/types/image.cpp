@@ -31,7 +31,7 @@ DrImage::DrImage(std::string image_name, DrBitmap &bitmap, float lod, bool outli
     this->m_bitmap = bitmap;
 
     if (outline) {
-        autoOutlinePoints(lod);
+        outlinePoints(lod);
     } else {
         m_poly_list.push_back(bitmap.polygon().points());
         m_hole_list.push_back({});
@@ -66,7 +66,7 @@ void DrImage::setSimpleBox() {
 //##       10.000 = Really low poly
 //##
 //####################################################################################        
-void DrImage::autoOutlinePoints(float lod) {
+void DrImage::outlinePoints(float lod) {
     m_poly_list.clear();
     m_hole_list.clear();
 
@@ -107,7 +107,7 @@ void DrImage::autoOutlinePoints(float lod) {
         if (one_poly.size() > (c_neighbors * 2)) {
             one_poly = DrMesh::smoothPoints(one_poly, c_neighbors, 20.0, 1.0);
             one_poly = PolylineSimplification::RamerDouglasPeucker(one_poly, lod);  
-            one_poly = DrMesh::insertPoints(one_poly);
+            //one_poly = DrMesh::insertPoints(one_poly);
         }
 
         // If we only have a couple points left, add shape as a box of the original image, otherwise use PolylineSimplification points
@@ -158,7 +158,7 @@ void DrImage::autoOutlinePoints(float lod) {
             if (one_hole.size() > (c_neighbors * 2)) {
                 one_hole = DrMesh::smoothPoints(one_hole, c_neighbors, 30.0, 1.0);
                 one_hole = PolylineSimplification::RamerDouglasPeucker(one_hole, lod);
-                one_hole = DrMesh::insertPoints(one_hole);
+                //one_hole = DrMesh::insertPoints(one_hole);
             }
 
             if (one_hole.size() > 3) {
@@ -176,7 +176,7 @@ void DrImage::autoOutlinePoints(float lod) {
     m_outline_processed = true;
 
 
-}   // End autoOutlinePoints()
+}   // End outlinePoints()
 
 
 

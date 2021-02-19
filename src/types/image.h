@@ -54,7 +54,7 @@ public:
     std::string         getName()   { return m_simple_name; }
 
     // Image Helper Functions
-    void                autoOutlinePoints(float lod);
+    void                outlinePoints(float lod);
     bool                outlineCanceled()                   { return m_outline_canceled; }
     bool                outlineProcessed()                  { return m_outline_processed; }
     void                setSimpleBox();
