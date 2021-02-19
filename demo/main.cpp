@@ -639,7 +639,7 @@ static void frame(void) {
         fonsSetBlur(fs, 0);
         fonsSetSpacing(fs, 0.0f);
         fonsDrawText(fs, 10 * dpis, 20 * dpis, ("FPS: " +  std::to_string(fps)).c_str(), NULL);
-        fonsDrawText(fs, 10 * dpis, 40 * dpis, ("Quality: " + std::to_string(mesh_quality)).c_str(), NULL);
+        fonsDrawText(fs, 10 * dpis, 40 * dpis, ("Quality: " + std::to_string(mesh_quality+1)).c_str(), NULL);
         fonsDrawText(fs, 10 * dpis, 60 * dpis, ("Triangles: " + std::to_string(mesh->indexCount() / 3)).c_str(), NULL);
         //fonsDrawText(fs, 10 * dpis, 80 * dpis, ("ZOOM: " + std::to_string(zoom)).c_str(), NULL);
     }
