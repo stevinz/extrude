@@ -374,9 +374,21 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
 
         // ********** Copy data into our custom bitmap class, create image and trace outline
         DrBitmap bitmap = DrBitmap(pixels, static_cast<int>(png_width * png_height * 4), false, png_width, png_height);
-        //bitmap = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, bitmap, Dr::RandomInt(-100, 100));
-        image = std::make_shared<DrImage>("shapes", bitmap, 0.25f);
 
+        // ********** Ensure bitmap is power of 2
+        int max_side = Dr::Max(png_width, png_height);
+        int pow2 = 2;
+        while (pow2 < max_side) pow2 = std::pow(pow2, 2);
+        DrBitmap square = DrBitmap(pow2, pow2);
+        for (int x = 0; x < png_width; x++) {
+            for (int y = 0; y < png_height; y++) {
+                square.setPixel(x, y, bitmap.getPixel(x, y));
+            }
+        }
+        //square = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, square, Dr::RandomInt(-100, 100));
+        image = std::make_shared<DrImage>("shapes", square, 0.25f);
+
+        // ********** Calculate 3D Mesh
         calculateMesh(true);        
 
         // ********** Initialze the sokol-gfx texture

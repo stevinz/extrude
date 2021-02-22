@@ -104,8 +104,8 @@ if (ExportTarget MATCHES "mac")
     target_link_libraries(${PROJECT_NAME} ${AUDIOKIT_LIBRARY})
 
 elseif (ExportTarget MATCHES "web")
-    # To Optimze file size: -O2, fast but good, -O3 better, -Os is the smallest
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os -std=c++11 --shell-file ../shell.html") 
+    # To optimze file size in order: -O1, -O2, -O3, -Os, -Oz
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Oz -std=c++11 --shell-file ../shell.html") 
     set(CMAKE_C_COMPILER "emcc")
     set(CMAKE_CXX_COMPILER "emcc")
     SET(CMAKE_EXECUTABLE_SUFFIX ".html")
