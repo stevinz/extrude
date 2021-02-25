@@ -113,7 +113,9 @@ elseif (ExportTarget MATCHES "web")
     #   --preload-file assets/shapes.png"       # To allow access to local filesystem
     #   --embed-file assets/shapes.png"         # To embed in js file, not compatible yet with sokol_app
     #   -s ALLOW_MEMORY_GROWTH=1                # To allow for dynamic memory access
-    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind ")
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-s TOTAL_MEMORY=33554432 -s DEMANGLE_SUPPORT=1 -s WASM=0 -std=c++11 --bind ")
+
+    # -s TOTAL_MEMORY=X  with X higher than the current value 16777216
 
     # -s WASM=0                         force javascript or
     # -s WASM=1                         use webassembly

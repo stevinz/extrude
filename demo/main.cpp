@@ -45,7 +45,7 @@
 //################################################################################
 //##    Local Structs / Defines
 //################################################################################
-#define MAX_FILE_SIZE (1024 * 1024)
+#define MAX_FILE_SIZE (2048 * 2048)
 
 enum loadstate_t {
     LOADSTATE_UNKNOWN = 0,
@@ -93,6 +93,7 @@ std::shared_ptr<DrImage> image = nullptr;
 bool initialized_image = false;
 int  mesh_quality = 5;
 int  before_keys = mesh_quality;
+std::string load_status = "";
 
 // FPS Variables
 uint64_t time_start = 0;
@@ -370,7 +371,7 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
     stbi_uc* pixels = stbi_load_from_memory(buffer_ptr, fetched_size, &png_width, &png_height, &num_channels, desired_channels);
 
     // Stb Load Succeeded
-    if (pixels) {
+    if (pixels && (png_width <= 2048) && (png_height <= 2048)) {
 
         // ********** Copy data into our custom bitmap class, create image and trace outline
         DrBitmap bitmap = DrBitmap(pixels, static_cast<int>(png_width * png_height * 4), false, png_width, png_height);
@@ -378,8 +379,12 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         // ********** Ensure bitmap is power of 2
         int max_side = Dr::Max(png_width, png_height);
         int pow2 = 2;
-        while (pow2 < max_side) pow2 = std::pow(pow2, 2);
-        DrBitmap square = DrBitmap(pow2, pow2);
+        int new_size = 2;
+        while (new_size < max_side) {
+            new_size = std::pow(2.0, pow2);
+            pow2++;
+        }
+        DrBitmap square = DrBitmap(new_size, new_size);
         for (int x = 0; x < png_width; x++) {
             for (int y = 0; y < png_height; y++) {
                 square.setPixel(x, y, bitmap.getPixel(x, y));
@@ -411,6 +416,12 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         sg_init_image(state.bind.fs_images[SLOT_tex], &sokol_image);
         initialized_image = true;
         stbi_image_free(pixels);
+    
+        load_status = "";
+    } else if (pixels) {
+        load_status = "Image size too big! Maximum width and height of 2048 pixels!";    
+    } else {
+        load_status = "Error loading image!";
     }
 }
 
@@ -522,16 +533,29 @@ static void input(const sapp_event* event) {
             mouse_down.set(event->mouse_y, event->mouse_x);
             is_mouse_down = true;
         }
-        
-    } else if (event->type == SAPP_EVENTTYPE_MOUSE_UP) {
-        if (event->mouse_button == SAPP_MOUSEBUTTON_LEFT) {
-            is_mouse_down = false;
+    } else if (event->type == SAPP_EVENTTYPE_TOUCHES_BEGAN) {
+        if (event->num_touches >= 0) {
+            mouse_down.set(event->touches[0].pos_y, event->touches[0].pos_x);
+            is_mouse_down = true;
         }
 
-    } else if (event->type == SAPP_EVENTTYPE_MOUSE_MOVE) {
+    } else if (event->type == SAPP_EVENTTYPE_MOUSE_UP) {
+        if (event->mouse_button == SAPP_MOUSEBUTTON_LEFT) is_mouse_down = false;
+    } else if (event->type == SAPP_EVENTTYPE_TOUCHES_ENDED) {
+        if (event->num_touches == 0) is_mouse_down = false;
+            
+    } else if (event->type == SAPP_EVENTTYPE_MOUSE_MOVE || event->type == SAPP_EVENTTYPE_TOUCHES_MOVED) {
         if (is_mouse_down) {
-            float x_movement = event->mouse_y;
-            float y_movement = event->mouse_x;
+            float x_movement = 0.f;
+            float y_movement = 0.f;
+
+            if (event->type == SAPP_EVENTTYPE_MOUSE_MOVE) {
+                x_movement = event->mouse_y;
+                y_movement = event->mouse_x;
+            } else if (event->type == SAPP_EVENTTYPE_TOUCHES_MOVED) {
+                x_movement = event->touches[0].pos_y;
+                y_movement = event->touches[0].pos_x;
+            }
 
             if (mouse_down.x < x_movement) {
                 add_rotation.x = rotate_speed * (x_movement - mouse_down.x);
@@ -654,6 +678,12 @@ static void frame(void) {
         fonsDrawText(fs, 10 * dpis, 40 * dpis, ("Quality: " + std::to_string(mesh_quality+1)).c_str(), NULL);
         fonsDrawText(fs, 10 * dpis, 60 * dpis, ("Triangles: " + std::to_string(mesh->indexCount() / 3)).c_str(), NULL);
         //fonsDrawText(fs, 10 * dpis, 80 * dpis, ("ZOOM: " + std::to_string(zoom)).c_str(), NULL);
+
+        if (load_status != "") {
+            fonsSetAlign(fs, FONS_ALIGN_CENTER | FONS_ALIGN_MIDDLE);
+            fonsSetSize(fs, 22.0f * dpis);
+            fonsDrawText(fs, 0, (sapp_heightf() / 2.f) * dpis, load_status.c_str(), NULL);
+        }
     }
     sfons_flush(fs);            // Flush fontstash's font atlas to sokol-gfx texture
     sgl_draw();

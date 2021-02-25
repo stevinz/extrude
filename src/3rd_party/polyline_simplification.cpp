@@ -9,7 +9,7 @@
 //
 //
 #include <cmath>
-#include <stdexcept>
+//#include <stdexcept>
 #include <utility>
 
 #include "../types/pointf.h"
@@ -49,7 +49,7 @@ std::vector<DrPointF> PolylineSimplification::RamerDouglasPeucker(const std::vec
     std::vector<DrPointF> simplified;
 
     if (point_list.size() < 2) {
-        throw std::invalid_argument("Not enough points to simplify");
+        //throw std::invalid_argument("Not enough points to simplify");
         return point_list;
     }
 
