@@ -30,7 +30,6 @@ asm.js/wasm live demo: https://stevinz.github.io/extrude-html5/
 
 ## Thanks to these libraries used during extrusion:
 
-- Delaunator (MIT): https://github.com/soerendd/delaunator-cpp
 - Handmade-Math (CC0): https://github.com/StrangeZak/Handmade-Math
 - Mesh Optimizer (MIT): https://github.com/zeux/meshoptimizer 
 - Poly Partition (MIT): https://github.com/ivanfratric/polypartition

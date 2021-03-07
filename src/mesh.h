@@ -39,7 +39,6 @@ enum class Trianglulation {
     Ear_Clipping,
     Triangulate_Opt,
     Monotone,
-    Delaunay,
 };
 
 enum class Triangle_Point {
