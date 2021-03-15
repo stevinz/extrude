@@ -136,15 +136,9 @@ elseif (EXPORT_TARGET MATCHES "web")
 
 elseif (EXPORT_TARGET MATCHES "windows")
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
     ### TODO ###
 
 elseif (EXPORT_TARGET MATCHES "linux")
-
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
     ### TODO ###
 

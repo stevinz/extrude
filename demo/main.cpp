@@ -10,12 +10,12 @@
 //################################################################################
 //##    Includes
 //################################################################################
+#include <memory>
 #include "../src/3rd_party/handmade_math.h"
 #include "../src/3rd_party/stb/stb_image.h"
 #include "../src/compare.h"
 #include "../src/imaging.h"
 #include "../src/mesh.h"
-#include "../src/random.h"
 #include "../src/types/bitmap.h"
 #include "../src/types/color.h"
 #include "../src/types/image.h"
@@ -303,21 +303,23 @@ void calculateMesh(bool reset_position) {
         // ***** Vertex Buffer
         unsigned int total_vertices = mesh->vertices.size();
 
-        Vertex vertices[total_vertices];
+        std::vector<Vertex> vertices(total_vertices);
         for (size_t i = 0; i < total_vertices; i++) vertices[i] = mesh->vertices[i];
         sg_buffer_desc sokol_buffer_vertex { };
-            sokol_buffer_vertex.data = SG_RANGE(vertices);
+            //sokol_buffer_vertex.data = SG_RANGE(vertices[0]);
+            sokol_buffer_vertex.data = sg_range{ &vertices[0], vertices.size() * sizeof(Vertex) };
             sokol_buffer_vertex.label = "extruded-vertices";
         sg_destroy_buffer(state.bind.vertex_buffers[0]);
         state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
 
         // ***** Index Buffer
         unsigned int total_indices = mesh->indices.size();
-        uint16_t indices[total_indices];
+        std::vector<uint16_t> indices(total_indices);
         for (size_t i = 0; i < total_indices; i++) indices[i] = mesh->indices[i];
         sg_buffer_desc sokol_buffer_index { };
             sokol_buffer_index.type = SG_BUFFERTYPE_INDEXBUFFER;
-            sokol_buffer_index.data = SG_RANGE(indices);
+            //sokol_buffer_index.data = SG_RANGE(indices[0]);
+            sokol_buffer_index.data = sg_range{ &indices[0], indices.size() * sizeof(uint16_t) };
             sokol_buffer_index.label = "temp-indices";
         sg_destroy_buffer(state.bind.index_buffer);
         state.bind.index_buffer = sg_make_buffer(&(sokol_buffer_index));

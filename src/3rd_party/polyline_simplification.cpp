@@ -9,7 +9,7 @@
 //
 //
 #include <cmath>
-//#include <stdexcept>
+#include <stdexcept>
 #include <utility>
 
 #include "../types/pointf.h"

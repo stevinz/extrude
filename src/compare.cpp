@@ -16,27 +16,6 @@ namespace Dr {
 
 //####################################################################################
 //##
-//##    Number Comparision Functions
-//##
-//############################
-// Checks to make sure double is NOT Nan and is NOT infinite
-bool RealDouble(double number_to_check) {
-    return ((std::isnan(number_to_check) == false) && (std::isinf(number_to_check) == false));
-}
-
-// Checks to make sure double is NOT Nan and is NOT infinite
-bool RealFloat(float number_to_check) {
-    return ((std::isnan(number_to_check) == false) && (std::isinf(number_to_check) == false));
-}
-
-// Checks to make sure integer is NOT Nan and is NOT infinite
-bool RealInteger(int number_to_check) {
-    return ((std::isnan(number_to_check) == false) && (std::isinf(number_to_check) == false));
-}
-
-
-//####################################################################################
-//##
 //##    Angle Comparision Functions
 //##
 //####################################################################################
