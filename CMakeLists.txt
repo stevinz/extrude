@@ -2,28 +2,21 @@
 #
 #   To compile, set target manually below:
 #
-#       "mac"   MacOS
-#       "web"   Emscripten
-#       "win"   Windows
-#       "lin"   Linux
+#       "auto"      Attempt to autodetect
+#       "osx"       MacOS
+#       "web"       Emscripten
+#       "windows"   Windows
+#       "linux"     Linux
 #
 ##################################################################
+##################################################################
 
 
-set(ExportTarget "web")
+set(EXPORT_TARGET "auto")
 
 
 ##################################################################
-if     (EXPORT_TARGET MATCHES "mac") 
-    add_compile_definitions(TARGET_MAC)
-elseif (EXPORT_TARGET MATCHES "web") 
-    add_compile_definitions(TARGET_WEB)
-elseif (EXPORT_TARGET MATCHES "win") 
-    add_compile_definitions(TARGET_WIN)
-elseif (EXPORT_TARGET MATCHES "lin") 
-    add_compile_definitions(TARGET_LIN)
-endif()
-
+##################################################################
 # set cmake version
 cmake_minimum_required(VERSION 3.10)
 
@@ -43,11 +36,31 @@ file(GLOB SOURCE_CODE_FILES
 )
 add_executable(${PROJECT_NAME} ${SOURCE_CODE_FILES})
 
+# determine target
+if (EXPORT_TARGET MATCHES "auto")
+    if     (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        set(EXPORT_TARGET "osx")
+    elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+        set(EXPORT_TARGET "windows")
+    elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+        set(EXPORT_TARGET "linux")
+    endif()
+endif()
+if     (EXPORT_TARGET MATCHES "osx") 
+    add_compile_definitions(TARGET_MAC)
+elseif (EXPORT_TARGET MATCHES "web") 
+    add_compile_definitions(TARGET_WEB)
+elseif (EXPORT_TARGET MATCHES "windows") 
+    add_compile_definitions(TARGET_WIN)
+elseif (EXPORT_TARGET MATCHES "linux") 
+    add_compile_definitions(TARGET_LIN)
+endif()
 
 # compile Shaders
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    message("Compiling shader")  
     execute_process (
-       COMMAND ./sokol-shdc -i shader.glsl -o demo/shader.glsl.h -l glsl330:glsl100:metal_macos
+       COMMAND ./sokol-shdc -i shader.glsl -o demo/shader.glsl.h -l glsl330:glsl100:metal_macos:hlsl4
        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
@@ -74,8 +87,8 @@ add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E 
 # - emscripten:             WebAudio with ScriptProcessorNode
 # - Android:                OpenSLES (link with OpenSLES)
 ##################################################################
-if (ExportTarget MATCHES "mac")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -xobjective-c -fobjc-arc")
+if (EXPORT_TARGET MATCHES "osx")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -xobjective-c -fobjc-arc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fobjc-arc")
     set(CMAKE_C_COMPILER "gcc")
     set(CMAKE_CXX_COMPILER "g++")
@@ -103,7 +116,7 @@ if (ExportTarget MATCHES "mac")
     target_link_libraries(${PROJECT_NAME} ${METALKIT_LIBRARY})
     target_link_libraries(${PROJECT_NAME} ${AUDIOKIT_LIBRARY})
 
-elseif (ExportTarget MATCHES "web")
+elseif (EXPORT_TARGET MATCHES "web")
     # To optimze file size in order: -O1, -O2, -O3, -Os, -Oz
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Oz -std=c++11 --shell-file ../shell.html") 
     set(CMAKE_C_COMPILER "emcc")
@@ -121,11 +134,17 @@ elseif (ExportTarget MATCHES "web")
     # -s WASM=1                         use webassembly
     # --shell-file <path>               create a html file without emscripten logo and debug shell
 
-elseif (ExportTarget MATCHES "win")
+elseif (EXPORT_TARGET MATCHES "windows")
+
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
     ### TODO ###
 
-elseif (ExportTarget MATCHES "lin")
+elseif (EXPORT_TARGET MATCHES "linux")
+
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
     ### TODO ###
 

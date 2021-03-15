@@ -123,38 +123,12 @@ static void font_normal_loaded(const sfetch_response_t* response) {
 
 
 //################################################################################
-//##    Blend Functions
-//################################################################################
-// Normal
-sg_blend_state (sokol_blend_normal) {
-    .enabled =              true,
-    .src_factor_rgb =       SG_BLENDFACTOR_ONE,
-    .dst_factor_rgb =       SG_BLENDFACTOR_ZERO,
-    .op_rgb =               SG_BLENDOP_ADD,
-    .src_factor_alpha =     SG_BLENDFACTOR_ONE,
-    .dst_factor_alpha =     SG_BLENDFACTOR_ZERO,
-    .op_alpha =             SG_BLENDOP_ADD,
-};
-// Alpha Enabled
-sg_blend_state (sokol_blend_alpha) {
-    .enabled =              true,
-    .src_factor_rgb =       SG_BLENDFACTOR_SRC_ALPHA,
-    .dst_factor_rgb =       SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
-    .op_rgb =               SG_BLENDOP_ADD,
-    .src_factor_alpha =     SG_BLENDFACTOR_SRC_ALPHA,
-    .dst_factor_alpha =     SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
-    .op_alpha =             SG_BLENDOP_ADD,
-};
-
-
-//################################################################################
 //##    Initialize
 //################################################################################
 void init(void) {
     // ***** Setup sokol-gfx, call sokol_glue function to obtain values from sokol_app
-    sg_desc (sokol_gfx) {
-        .context = sapp_sgcontext()
-    };            
+    sg_desc sokol_gfx { };
+        sokol_gfx.context = sapp_sgcontext(); 
     sg_setup(&sokol_gfx);
 
     // ***** Setup sokol-gl
@@ -166,11 +140,10 @@ void init(void) {
     time_start = stm_now();
 
     // ***** Setup sokol-fetch (for loading files) with the minimal "resource limits"
-    sfetch_desc_t (sokol_fetch) {
-        .max_requests = 4,
-        .num_channels = 2,
-        .num_lanes = 2
-    };
+    sfetch_desc_t sokol_fetch { };
+        sokol_fetch.max_requests = 4;
+        sokol_fetch.num_channels = 2;
+        sokol_fetch.num_lanes = 2;
     sfetch_setup(&sokol_fetch);
 
     // ***** Font Setup, make sure the fontstash atlas width/height is pow-2 
@@ -195,45 +168,45 @@ void init(void) {
         {  1.0f,  1.0f, -1.0f,  1.0f, 1.0f, 1.0f,      1,   1,      1.0f, 1.0f, 1.0f },      
         { -1.0f,  1.0f, -1.0f,  1.0f, 1.0f, 1.0f,      0,   1,      1.0f, 1.0f, 1.0f },      
     };
-    sg_buffer_desc (sokol_buffer_vertex) {
-        .data = SG_RANGE(vertices),
-        .label = "temp-vertices"
-    };
+    sg_buffer_desc sokol_buffer_vertex { };
+        sokol_buffer_vertex.data = SG_RANGE(vertices);
+        sokol_buffer_vertex.label = "temp-vertices";
     state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
 
     // Index buffer
     const uint16_t indices[] = { 0, 1, 2, 0, 2, 3 };
-    sg_buffer_desc (sokol_buffer_index) {
-        .type = SG_BUFFERTYPE_INDEXBUFFER,
-        .data = SG_RANGE(indices),
-        .label = "temp-indices"
-    };
+    sg_buffer_desc sokol_buffer_index { };
+        sokol_buffer_index.type = SG_BUFFERTYPE_INDEXBUFFER;
+        sokol_buffer_index.data = SG_RANGE(indices);
+        sokol_buffer_index.label = "temp-indices";
     state.bind.index_buffer = sg_make_buffer(&(sokol_buffer_index));
 
+    // ***** Blend mode
+    sg_blend_state sokol_blend_alpha { };
+        sokol_blend_alpha.enabled =              true;
+        sokol_blend_alpha.src_factor_rgb =       SG_BLENDFACTOR_SRC_ALPHA;
+        sokol_blend_alpha.dst_factor_rgb =       SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+        sokol_blend_alpha.op_rgb =               SG_BLENDOP_ADD;
+        sokol_blend_alpha.src_factor_alpha =     SG_BLENDFACTOR_SRC_ALPHA;
+        sokol_blend_alpha.dst_factor_alpha =     SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+        sokol_blend_alpha.op_alpha =             SG_BLENDOP_ADD;
 
     // ***** Pipeline State Object, sets 3D device parameters
-    sg_pipeline_desc (sokol_pipleine) {
-        .shader = sg_make_shader(extrude3D_shader_desc(sg_query_backend())),
-        .layout = {
-            .attrs = {
-                [ATTR_vs_pos].format = SG_VERTEXFORMAT_FLOAT3,
-                [ATTR_vs_norm].format = SG_VERTEXFORMAT_FLOAT3,
-                [ATTR_vs_texcoord0].format = SG_VERTEXFORMAT_FLOAT2, //SG_VERTEXFORMAT_SHORT2N,
-                [ATTR_vs_bary].format = SG_VERTEXFORMAT_FLOAT3,
-            }
-        },
-        //.primitive_type  = SG_PRIMITIVETYPE_TRIANGLES,
-        //.index_type = SG_INDEXTYPE_NONE,
-        .index_type = SG_INDEXTYPE_UINT16,
-        //.cull_mode = SG_CULLMODE_NONE, 
-        .cull_mode = SG_CULLMODE_FRONT,
-        .depth = {
-            .compare = SG_COMPAREFUNC_LESS_EQUAL,
-            .write_enabled = true
-        },
-        .label = "extrude-pipeline",
-        .colors[0].blend = sokol_blend_alpha,
-    };
+    sg_pipeline_desc sokol_pipleine { };
+        sokol_pipleine.shader = sg_make_shader(extrude3D_shader_desc(sg_query_backend()));
+        sokol_pipleine.layout.attrs[ATTR_vs_pos].format =       SG_VERTEXFORMAT_FLOAT3;
+        sokol_pipleine.layout.attrs[ATTR_vs_norm].format =      SG_VERTEXFORMAT_FLOAT3;
+        sokol_pipleine.layout.attrs[ATTR_vs_texcoord0].format = SG_VERTEXFORMAT_FLOAT2; //SG_VERTEXFORMAT_SHORT2N;
+        sokol_pipleine.layout.attrs[ATTR_vs_bary].format =      SG_VERTEXFORMAT_FLOAT3;
+        sokol_pipleine.primitive_type = SG_PRIMITIVETYPE_TRIANGLES;
+        //sokol_pipleine.index_type =   SG_INDEXTYPE_NONE;
+        sokol_pipleine.index_type =     SG_INDEXTYPE_UINT16;
+        //sokol_pipleine.cull_mode =    SG_CULLMODE_NONE; 
+        sokol_pipleine.cull_mode =      SG_CULLMODE_FRONT;
+        sokol_pipleine.depth.compare =  SG_COMPAREFUNC_LESS_EQUAL;
+        sokol_pipleine.depth.write_enabled = true;
+        sokol_pipleine.label = "extrude-pipeline";
+        sokol_pipleine.colors[0].blend = sokol_blend_alpha;
     state.pip = sg_make_pipeline(&sokol_pipleine);
 
 
@@ -275,21 +248,19 @@ void init(void) {
 
 
     // Load inital "shapes.png" image in background
-    sfetch_request_t (sokol_fetch_image) {
-        .path = image_file.c_str(),
-        .callback = image_loaded,
-        .buffer_ptr = state.file_buffer,
-        .buffer_size = sizeof(state.file_buffer)
-    };
+    sfetch_request_t sokol_fetch_image { };
+        sokol_fetch_image.path = image_file.c_str();
+        sokol_fetch_image.callback = image_loaded;
+        sokol_fetch_image.buffer_ptr = state.file_buffer;
+        sokol_fetch_image.buffer_size = sizeof(state.file_buffer);
     sfetch_send(&sokol_fetch_image);
 
     // Load font in background
-    sfetch_request_t (sokol_fetch_font) {
-        .path = font_file.c_str(),
-        .callback = font_normal_loaded,
-        .buffer_ptr = state.font_normal_data,
-        .buffer_size = sizeof(state.font_normal_data)
-    };
+    sfetch_request_t sokol_fetch_font { };
+        sokol_fetch_font.path = font_file.c_str();
+        sokol_fetch_font.callback = font_normal_loaded;
+        sokol_fetch_font.buffer_ptr = state.font_normal_data;
+        sokol_fetch_font.buffer_size = sizeof(state.font_normal_data);
     sfetch_send(&sokol_fetch_font);
 }
 
@@ -334,10 +305,9 @@ void calculateMesh(bool reset_position) {
 
         Vertex vertices[total_vertices];
         for (size_t i = 0; i < total_vertices; i++) vertices[i] = mesh->vertices[i];
-        sg_buffer_desc (sokol_buffer_vertex) {
-            .data = SG_RANGE(vertices),
-            .label = "extruded-vertices"
-        };
+        sg_buffer_desc sokol_buffer_vertex { };
+            sokol_buffer_vertex.data = SG_RANGE(vertices);
+            sokol_buffer_vertex.label = "extruded-vertices";
         sg_destroy_buffer(state.bind.vertex_buffers[0]);
         state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
 
@@ -345,11 +315,10 @@ void calculateMesh(bool reset_position) {
         unsigned int total_indices = mesh->indices.size();
         uint16_t indices[total_indices];
         for (size_t i = 0; i < total_indices; i++) indices[i] = mesh->indices[i];
-        sg_buffer_desc (sokol_buffer_index) {
-            .type = SG_BUFFERTYPE_INDEXBUFFER,
-            .data = SG_RANGE(indices),
-            .label = "temp-indices"
-        };
+        sg_buffer_desc sokol_buffer_index { };
+            sokol_buffer_index.type = SG_BUFFERTYPE_INDEXBUFFER;
+            sokol_buffer_index.data = SG_RANGE(indices);
+            sokol_buffer_index.label = "temp-indices";
         sg_destroy_buffer(state.bind.index_buffer);
         state.bind.index_buffer = sg_make_buffer(&(sokol_buffer_index));
 
@@ -397,18 +366,15 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
         calculateMesh(true);        
 
         // ********** Initialze the sokol-gfx texture
-        sg_image_desc (sokol_image) {
-            .width =  image->getBitmap().width,
-            .height = image->getBitmap().height,
-            .pixel_format = SG_PIXELFORMAT_RGBA8,
-            .min_filter = SG_FILTER_LINEAR,
-            .mag_filter = SG_FILTER_LINEAR,
-            .data.subimage[0][0] = {
-                .ptr =  &(image->getBitmap().data[0]),
-                .size = (size_t)image->getBitmap().size(),
-            }
-        };
-        
+        sg_image_desc sokol_image { };
+            sokol_image.width =  image->getBitmap().width;
+            sokol_image.height = image->getBitmap().height;
+            sokol_image.pixel_format = SG_PIXELFORMAT_RGBA8;
+            sokol_image.min_filter = SG_FILTER_LINEAR;
+            sokol_image.mag_filter = SG_FILTER_LINEAR;
+            sokol_image.data.subimage[0][0].ptr =  &(image->getBitmap().data[0]);
+            sokol_image.data.subimage[0][0].size = (size_t)image->getBitmap().size();
+    
         // If we already have an image in the state buffer, uninit before initializing new image
         if (initialized_image == true) { sg_uninit_image(state.bind.fs_images[SLOT_tex]); }
 
@@ -439,25 +405,16 @@ static void image_loaded(const sfetch_response_t* response) {
     else if (response->finished) {
         // If loading the file failed, set clear color to signal reason
         if (response->failed) {
-            sg_pass_action (pass_action0) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 1.0f, 1.0f, 1.0f } } };        // white
-            sg_pass_action (pass_action1) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 0.0f, 0.0f, 1.0f } } };        // red
-            sg_pass_action (pass_action2) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.0f, 1.0f, 0.0f, 1.0f } } };        // green
-            sg_pass_action (pass_action3) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.0f, 0.0f, 1.0f, 1.0f } } };        // blue 
-            sg_pass_action (pass_action4) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 1.0f, 0.0f, 1.0f } } };        // yellow
-            sg_pass_action (pass_action5) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.0f, 1.0f, 1.0f, 1.0f } } };        // cyan
-            sg_pass_action (pass_action6) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 1.0f, 0.0f, 1.0f, 1.0f } } };        // magenta
-            sg_pass_action (pass_action7) { .colors[0] = { .action = SG_ACTION_CLEAR, .value = { 0.5f, 0.5f, 0.5f, 1.0f } } };        // black
-    
             switch (response->error_code) {
-                case SFETCH_ERROR_NO_ERROR:             state.pass_action = (pass_action0);     break;
-                case SFETCH_ERROR_FILE_NOT_FOUND:       state.pass_action = (pass_action1);     break;
-                case SFETCH_ERROR_NO_BUFFER:            state.pass_action = (pass_action2);     break;
-                case SFETCH_ERROR_BUFFER_TOO_SMALL:     state.pass_action = (pass_action3);     break;
-                case SFETCH_ERROR_UNEXPECTED_EOF:       state.pass_action = (pass_action4);     break;
-                case SFETCH_ERROR_CANCELLED:            state.pass_action = (pass_action5);     break;
-                case SFETCH_ERROR_INVALID_HTTP_STATUS:  state.pass_action = (pass_action6);     break;
-                default:                                state.pass_action = (pass_action7);
-            }            
+                case SFETCH_ERROR_NO_ERROR:             state.pass_action.colors[0].value = { 1.0f, 0.0f, 0.0f, 1.0f }; break;
+                case SFETCH_ERROR_FILE_NOT_FOUND:       state.pass_action.colors[0].value = { 0.0f, 1.0f, 0.0f, 1.0f }; break;
+                case SFETCH_ERROR_NO_BUFFER:            state.pass_action.colors[0].value = { 0.0f, 0.0f, 1.0f, 1.0f }; break;
+                case SFETCH_ERROR_BUFFER_TOO_SMALL:     state.pass_action.colors[0].value = { 1.0f, 1.0f, 0.0f, 1.0f }; break;
+                case SFETCH_ERROR_UNEXPECTED_EOF:       state.pass_action.colors[0].value = { 0.0f, 1.0f, 1.0f, 1.0f }; break;
+                case SFETCH_ERROR_CANCELLED:            state.pass_action.colors[0].value = { 1.0f, 0.0f, 1.0f, 1.0f }; break;
+                case SFETCH_ERROR_INVALID_HTTP_STATUS:  state.pass_action.colors[0].value = { 0.3f, 0.3f, 0.3f, 1.0f }; break;
+                default:                                state.pass_action.colors[0].value = { 0.6f, 0.6f, 0.6f, 1.0f }; 
+            } 
         }
     }
 }
@@ -578,21 +535,19 @@ static void input(const sapp_event* event) {
     } else if (event->type == SAPP_EVENTTYPE_FILES_DROPPED) {
         #if defined(__EMSCRIPTEN__)
             // on emscripten need to use the sokol-app helper function to load the file data
-            sapp_html5_fetch_request (sokol_fetch_request) {
-                .dropped_file_index = 0,
-                .callback = emsc_load_callback,
-                .buffer_ptr = state.file_buffer,
-                .buffer_size = sizeof(state.file_buffer),
-            };
+            sapp_html5_fetch_request sokol_fetch_request { };
+                sokol_fetch_request.dropped_file_index = 0;
+                sokol_fetch_request.callback = emsc_load_callback;
+                sokol_fetch_request.buffer_ptr = state.file_buffer;
+                sokol_fetch_request.buffer_size = sizeof(state.file_buffer);
             sapp_html5_fetch_dropped_file(&sokol_fetch_request);
         #else
             // native platform: use sokol-fetch to load file content
-            sfetch_request_t (sokol_fetch_request) {
-                .path = sapp_get_dropped_file_path(0),
-                .callback = native_load_callback,
-                .buffer_ptr = state.file_buffer,
-                .buffer_size = sizeof(state.file_buffer)
-            };
+            sfetch_request_t sokol_fetch_request { };
+                sokol_fetch_request.path = sapp_get_dropped_file_path(0);
+                sokol_fetch_request.callback = native_load_callback;
+                sokol_fetch_request.buffer_ptr = state.file_buffer;
+                sokol_fetch_request.buffer_size = sizeof(state.file_buffer);
             sfetch_send(&sokol_fetch_request);
         #endif
     }
