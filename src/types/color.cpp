@@ -10,7 +10,6 @@
 #include <iomanip>
 
 #include "../compare.h"
-#include "../string.h"
 #include "color.h"
 
 
@@ -71,16 +70,6 @@ unsigned int DrColor::rgba() {
                         (static_cast<unsigned int>(r) << 16) |
                         (static_cast<unsigned int>(a) << 24);
     return color;
-}
-std::string DrColor::name() {
-    std::string hex_r = Dr::ToHex(static_cast<int>(r));
-    std::string hex_g = Dr::ToHex(static_cast<int>(g));
-    std::string hex_b = Dr::ToHex(static_cast<int>(b));
-
-    if (hex_r.length() == 1) hex_r = std::string("0") + hex_r;
-    if (hex_g.length() == 1) hex_g = std::string("0") + hex_g;
-    if (hex_b.length() == 1) hex_b = std::string("0") + hex_b;
-    return std::string("#" + hex_r + hex_g + hex_b);
 }
 
 

@@ -79,8 +79,7 @@ public:
     // Conversions
     unsigned int    rgb();
     unsigned int    rgba();
-    std::string     name();
-
+    
     // Color Editing
     DrColor         redistributeRgb(double r, double g, double b);
     DrColor         darker(int percent =  200);

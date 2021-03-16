@@ -73,6 +73,9 @@
         "typeinfo": "cpp",
         "unordered_map": "cpp",
         "utility": "cpp",
-        "__functional_03": "cpp"
+        "__functional_03": "cpp",
+        "__cxx_version": "cpp",
+        "memory_resource": "cpp",
+        "version": "cpp"
     }
 }

@@ -88,8 +88,7 @@ public:
     int             vertexCount() const     { return vertices.size(); }
 
     // Creation Functions
-    void    initializeExtrudedImage(DrImage *image, int quality);
-    void    initializeTextureCone();
+    void    initializeExtrudedImage(DrImage *image, int quality, float depth_multiplier);
     void    initializeTextureCube();
     void    initializeTextureQuad();
 
@@ -103,9 +102,9 @@ public:
 
 
     // Extrusion Functions
-    void    extrudeFacePolygon(const std::vector<DrPointF> &outline_points, int width, int height, int steps, bool reverse = false);
+    void    extrudeFacePolygon(const std::vector<DrPointF> &outline_points, int width, int height, int steps, bool reverse = false, float depth_multiplier = 1.f);
     void    triangulateFace(const std::vector<DrPointF> &outline_points, const std::vector<std::vector<DrPointF>> &hole_list,
-                            const DrBitmap &image, bool wireframe, Trianglulation type, double alpha_tolerance);
+                            const DrBitmap &image, bool wireframe, Trianglulation type, double alpha_tolerance, float depth_multiplier);
 
     // Assignment
     static  void set(Vertex &from_vertex, Vertex &to_vertex);    
@@ -113,7 +112,7 @@ public:
     // Building Functions
     void    add(const DrVec3 &vertex, const DrVec3 &normal, const DrVec2 &text_coord, Triangle_Point point_number);
     void    extrude(float x1, float y1, float tx1, float ty1,
-                    float x2, float y2, float tx2, float ty2, int steps = 1);
+                    float x2, float y2, float tx2, float ty2, int steps = 1, float depth_multiplier = 1.f);
     void    cube(float x1, float y1, float tx1, float ty1,
                  float x2, float y2, float tx2, float ty2,
                  float x3, float y3, float tx3, float ty3,
@@ -124,7 +123,7 @@ public:
                  float x4, float y4, float tx4, float ty4);
     void    triangle(float x1, float y1, float tx1, float ty1,
                      float x2, float y2, float tx2, float ty2,
-                     float x3, float y3, float tx3, float ty3);
+                     float x3, float y3, float tx3, float ty3, float depth_multiplier);
 };
 
 

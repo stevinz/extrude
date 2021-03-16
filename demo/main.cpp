@@ -84,31 +84,33 @@ struct state_t {
 //##    Globals
 //################################################################################
 // Sokol Variables
-sapp_desc sokol_app;
-static state_t state;
+sapp_desc   sokol_app;
+state_t     state;
 
 // Image Variables
 std::shared_ptr<DrMesh> mesh = std::make_shared<DrMesh>();
-std::shared_ptr<DrImage> image = nullptr;
-bool initialized_image = false;
-int  mesh_quality = 5;
-int  before_keys = mesh_quality;
-std::string load_status = "";
+std::shared_ptr<DrImage> image  { nullptr };
+bool        initialized_image   { false };
+bool        recalculate         { false };
+std::string load_status         { "" };
 
 // FPS Variables
-uint64_t time_start = 0;
-long ticks = 0;
-long fps =   0;
+uint64_t time_start     { 0 };
+long ticks              { 0 };
+long fps                { 0 };
 
 // Model Rotation
-DrVec2      total_rotation {  0.f,  0.f };
-DrVec2      add_rotation   { 25.f, 25.f };
-hmm_mat4    model =         Dr::IdentityMatrix();
-DrVec2      mouse_down =    { 0, 0 };
-float       rotate_speed =  1.f;
-bool        is_mouse_down = false;
-float       zoom = 1.5f;
-bool        wireframe = true;
+int         mesh_quality        { 5 };
+float       level_of_detail     { 100.f };
+float       depth_multiplier    { 1.f };
+DrVec2      total_rotation      { 0.f,  0.f };
+DrVec2      add_rotation        { 25.f, 25.f };
+hmm_mat4    model               { Dr::IdentityMatrix() };
+DrVec2      mouse_down          { 0, 0 };
+float       rotate_speed        { 1.f };
+bool        is_mouse_down       { false };
+float       zoom                { 1.5f };
+bool        wireframe           { true };
 
 
 //################################################################################
@@ -141,9 +143,9 @@ void init(void) {
 
     // ***** Setup sokol-fetch (for loading files) with the minimal "resource limits"
     sfetch_desc_t sokol_fetch { };
-        sokol_fetch.max_requests = 4;
-        sokol_fetch.num_channels = 2;
-        sokol_fetch.num_lanes = 2;
+        sokol_fetch.max_requests =  4;
+        sokol_fetch.num_channels =  2;
+        sokol_fetch.num_lanes =     2;
     sfetch_setup(&sokol_fetch);
 
     // ***** Font Setup, make sure the fontstash atlas width/height is pow-2 
@@ -246,7 +248,6 @@ void init(void) {
         font_file  = "assets/aileron-regular.otf";
     #endif
 
-
     // Load inital "shapes.png" image in background
     sfetch_request_t sokol_fetch_image { };
         sokol_fetch_image.path = image_file.c_str();
@@ -275,7 +276,7 @@ void calculateMesh(bool reset_position) {
     //##        0.250 = Nice
     //##        1.000 = Low poly
     //##       10.000 = Really low poly
-    float level_of_detail = 0.6f;
+    float quality_check = level_of_detail;
     switch (mesh_quality) {
         case 0: level_of_detail = 19.200f;  break;
         case 1: level_of_detail =  9.600f;  break;
@@ -289,14 +290,15 @@ void calculateMesh(bool reset_position) {
     }
 
     // ***** Initialize Mesh
-    image->outlinePoints(level_of_detail);
+    if (level_of_detail != quality_check) {
+        image->outlinePoints(level_of_detail);
+    }
     mesh = std::make_shared<DrMesh>();
     mesh->image_size = Dr::Max(image->getBitmap().width, image->getBitmap().height);      
     mesh->wireframe = wireframe;
-    mesh->initializeExtrudedImage(image.get(), mesh_quality);
+    mesh->initializeExtrudedImage(image.get(), mesh_quality, depth_multiplier);
     //mesh->initializeTextureQuad();
     //mesh->initializeTextureCube();
-    //mesh->initializeTextureCone();
              
     // ***** Copy vertex data and set into state buffer
     if (mesh->vertexCount() > 0) {
@@ -306,7 +308,6 @@ void calculateMesh(bool reset_position) {
         std::vector<Vertex> vertices(total_vertices);
         for (size_t i = 0; i < total_vertices; i++) vertices[i] = mesh->vertices[i];
         sg_buffer_desc sokol_buffer_vertex { };
-            //sokol_buffer_vertex.data = SG_RANGE(vertices[0]);
             sokol_buffer_vertex.data = sg_range{ &vertices[0], vertices.size() * sizeof(Vertex) };
             sokol_buffer_vertex.label = "extruded-vertices";
         sg_destroy_buffer(state.bind.vertex_buffers[0]);
@@ -318,7 +319,6 @@ void calculateMesh(bool reset_position) {
         for (size_t i = 0; i < total_indices; i++) indices[i] = mesh->indices[i];
         sg_buffer_desc sokol_buffer_index { };
             sokol_buffer_index.type = SG_BUFFERTYPE_INDEXBUFFER;
-            //sokol_buffer_index.data = SG_RANGE(indices[0]);
             sokol_buffer_index.data = sg_range{ &indices[0], indices.size() * sizeof(uint16_t) };
             sokol_buffer_index.label = "temp-indices";
         sg_destroy_buffer(state.bind.index_buffer);
@@ -470,6 +470,7 @@ static void input(const sapp_event* event) {
             case SAPP_KEYCODE_8:
             case SAPP_KEYCODE_9:
                 mesh_quality = event->key_code - SAPP_KEYCODE_1;
+                recalculate = true;
                 break;
             case SAPP_KEYCODE_R:
                 total_rotation.set(0.f, 0.f);
@@ -480,6 +481,13 @@ static void input(const sapp_event* event) {
                 mesh->wireframe = !mesh->wireframe;
                 wireframe = mesh->wireframe;
                 break;
+            case SAPP_KEYCODE_MINUS:
+                depth_multiplier -= 0.2f;
+                recalculate = true;
+                break;
+            case SAPP_KEYCODE_EQUAL:
+                depth_multiplier += 0.2f;
+                recalculate = true;
             default: ;
         }
                 
@@ -600,9 +608,9 @@ static void frame(void) {
 
 
     // Check if user requested new model quality, if so recalculate
-    if (mesh_quality != before_keys) {
+    if (recalculate) {
         calculateMesh(false);
-        before_keys = mesh_quality;
+        recalculate = false;
     }
 
 
@@ -630,11 +638,12 @@ static void frame(void) {
         fonsSetSize(fs, 18.0f * dpis);
         fonsSetColor(fs, sfons_rgba(255, 255, 255, 255));
         fonsSetBlur(fs, 0);
-        fonsSetSpacing(fs, 0.0f);
-        fonsDrawText(fs, 10 * dpis, 20 * dpis, ("FPS: " +  std::to_string(fps)).c_str(), NULL);
-        fonsDrawText(fs, 10 * dpis, 40 * dpis, ("Quality: " + std::to_string(mesh_quality+1)).c_str(), NULL);
-        fonsDrawText(fs, 10 * dpis, 60 * dpis, ("Triangles: " + std::to_string(mesh->indexCount() / 3)).c_str(), NULL);
-        //fonsDrawText(fs, 10 * dpis, 80 * dpis, ("ZOOM: " + std::to_string(zoom)).c_str(), NULL);
+        fonsSetSpacing(fs, 0.0f); 
+        fonsDrawText(fs, 10 * dpis,  20 * dpis, ("FPS: " +  std::to_string(fps)).c_str(), NULL);
+        fonsDrawText(fs, 10 * dpis,  40 * dpis, ("Quality: " + std::to_string(mesh_quality+1)).c_str(), NULL);
+        fonsDrawText(fs, 10 * dpis,  60 * dpis, ("Triangles: " + std::to_string(mesh->indexCount() / 3)).c_str(), NULL);
+        fonsDrawText(fs, 10 * dpis,  80 * dpis, ("Depth: " + std::to_string(depth_multiplier)).c_str(), NULL);
+        //fonsDrawText(fs, 10 * dpis, 100 * dpis, ("ZOOM: " + std::to_string(zoom)).c_str(), NULL);
 
         if (load_status != "") {
             fonsSetAlign(fs, FONS_ALIGN_CENTER | FONS_ALIGN_MIDDLE);
