@@ -87,12 +87,17 @@ struct state_t {
 sapp_desc   sokol_app;
 state_t     state;
 
+// Holds generated meshes
+std::vector<DrMesh> meshes { };
+
 // Image Variables
-std::shared_ptr<DrMesh> mesh = std::make_shared<DrMesh>();
-std::shared_ptr<DrImage> image  { nullptr };
+DrBitmap    bitmap              { };
+DrImage     image               { "None", bitmap };
+long        image_size          { 0 };
 bool        initialized_image   { false };
 bool        recalculate         { false };
 std::string load_status         { "" };
+int         triangles           { 0 };
 
 // FPS Variables
 uint64_t time_start     { 0 };
@@ -265,8 +270,6 @@ void init(void) {
     sfetch_send(&sokol_fetch_font);
 }
 
-
-
 //################################################################################
 //##    Create 3D extrusion
 //################################################################################
@@ -289,24 +292,42 @@ void calculateMesh(bool reset_position) {
         case 8: level_of_detail =  0.075f;  break;
     }
 
-    // ***** Initialize Mesh
+    // Recalculate image polygons if necessary
     if (level_of_detail != quality_check) {
-        image->outlinePoints(level_of_detail);
+        image.outlinePoints(level_of_detail);
     }
-    mesh = std::make_shared<DrMesh>();
-    mesh->image_size = Dr::Max(image->getBitmap().width, image->getBitmap().height);      
-    mesh->wireframe = wireframe;
-    mesh->initializeExtrudedImage(image.get(), mesh_quality, depth_multiplier);
-    //mesh->initializeTextureQuad();
-    //mesh->initializeTextureCube();
+
+    // Get max image dimension
+    image_size = Dr::Max(image.getBitmap().width, image.getBitmap().height);
+
+    // Form new meshes
+    meshes.clear();
+    unsigned int total_vertices = 0;
+    unsigned int total_indices =  0;
+    for (int object = 0; object < image.m_poly_list.size(); object++) {
+        DrMesh mesh {};    
+        mesh.extrudeObjectFromPolygon(&image, object, mesh_quality, (static_cast<float>(image_size) * depth_multiplier));
+        //mesh->initializeTextureQuad(image_size);
+        //mesh->initializeTextureCube(image_size);   
+        total_vertices += mesh.vertices.size();
+        total_indices  += mesh.indices.size();
+        meshes.push_back(mesh);
+    }
+    triangles = total_vertices / 3;
              
     // ***** Copy vertex data and set into state buffer
-    if (mesh->vertexCount() > 0) {
+    if (meshes.size() > 0) {
+        std::vector<Vertex>     vertices(total_vertices);
+        std::vector<uint16_t>   indices(total_indices);
+                
         // ***** Vertex Buffer
-        unsigned int total_vertices = mesh->vertices.size();
-
-        std::vector<Vertex> vertices(total_vertices);
-        for (size_t i = 0; i < total_vertices; i++) vertices[i] = mesh->vertices[i];
+        unsigned long vertex_count = 0;
+        for (int m = 0; m < meshes.size(); m++) {
+            for (unsigned long i = 0; i < meshes[m].vertices.size(); i++) {
+                vertices[vertex_count] = meshes[m].vertices[i];
+                ++vertex_count;
+            }
+        }        
         sg_buffer_desc sokol_buffer_vertex { };
             sokol_buffer_vertex.data = sg_range{ &vertices[0], vertices.size() * sizeof(Vertex) };
             sokol_buffer_vertex.label = "extruded-vertices";
@@ -314,15 +335,22 @@ void calculateMesh(bool reset_position) {
         state.bind.vertex_buffers[0] = sg_make_buffer(&sokol_buffer_vertex);
 
         // ***** Index Buffer
-        unsigned int total_indices = mesh->indices.size();
-        std::vector<uint16_t> indices(total_indices);
-        for (size_t i = 0; i < total_indices; i++) indices[i] = mesh->indices[i];
+        unsigned long index_count = 0;
+        unsigned long index_offset = 0;
+        for (int m = 0; m < meshes.size(); m++) {
+            for (unsigned long i = 0; i < meshes[m].indices.size(); i++) {
+                indices[index_count] = index_offset + meshes[m].indices[i];
+                ++index_count;
+            }
+            index_offset += meshes[m].vertices.size();
+        }
         sg_buffer_desc sokol_buffer_index { };
             sokol_buffer_index.type = SG_BUFFERTYPE_INDEXBUFFER;
             sokol_buffer_index.data = sg_range{ &indices[0], indices.size() * sizeof(uint16_t) };
-            sokol_buffer_index.label = "temp-indices";
+            sokol_buffer_index.label = "extruded-indices";
         sg_destroy_buffer(state.bind.index_buffer);
         state.bind.index_buffer = sg_make_buffer(&(sokol_buffer_index));
+
 
         // ***** Reset rotation
         if (reset_position) {
@@ -362,20 +390,20 @@ static void load_image(stbi_uc *buffer_ptr, int fetched_size) {
             }
         }
         //square = Dr::ApplySinglePixelFilter(Image_Filter_Type::Hue, square, Dr::RandomInt(-100, 100));
-        image = std::make_shared<DrImage>("shapes", square, 0.25f);
+        image = DrImage("shapes", square, 0.25f);
 
         // ********** Calculate 3D Mesh
         calculateMesh(true);        
 
         // ********** Initialze the sokol-gfx texture
         sg_image_desc sokol_image { };
-            sokol_image.width =  image->getBitmap().width;
-            sokol_image.height = image->getBitmap().height;
+            sokol_image.width =  image.getBitmap().width;
+            sokol_image.height = image.getBitmap().height;
             sokol_image.pixel_format = SG_PIXELFORMAT_RGBA8;
             sokol_image.min_filter = SG_FILTER_LINEAR;
             sokol_image.mag_filter = SG_FILTER_LINEAR;
-            sokol_image.data.subimage[0][0].ptr =  &(image->getBitmap().data[0]);
-            sokol_image.data.subimage[0][0].size = (size_t)image->getBitmap().size();
+            sokol_image.data.subimage[0][0].ptr =  &(image.getBitmap().data[0]);
+            sokol_image.data.subimage[0][0].size = (size_t)image.getBitmap().size();
     
         // If we already have an image in the state buffer, uninit before initializing new image
         if (initialized_image == true) { sg_uninit_image(state.bind.fs_images[SLOT_tex]); }
@@ -478,15 +506,14 @@ static void input(const sapp_event* event) {
                 model = Dr::IdentityMatrix();
                 break;
             case SAPP_KEYCODE_W:
-                mesh->wireframe = !mesh->wireframe;
-                wireframe = mesh->wireframe;
+                wireframe = !wireframe;
                 break;
             case SAPP_KEYCODE_MINUS:
-                depth_multiplier -= 0.2f;
+                depth_multiplier -= 0.1f;
                 recalculate = true;
                 break;
             case SAPP_KEYCODE_EQUAL:
-                depth_multiplier += 0.2f;
+                depth_multiplier += 0.1f;
                 recalculate = true;
             default: ;
         }
@@ -585,7 +612,7 @@ static void frame(void) {
 
     // ***** Compute model-view-projection matrix for vertex shader
     hmm_mat4 proj = HMM_Perspective(52.5f, (float)sapp_width()/(float)sapp_height(), 5.f, 20000.0f);
-    hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, mesh->image_size * zoom), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
+    hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, static_cast<float>(image_size) * zoom), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
     hmm_mat4 view_proj = HMM_MultiplyMat4(proj, view);
 
     hmm_mat4 rxm = HMM_Rotate(add_rotation.x, HMM_Vec3(1.0f, 0.0f, 0.0f));
@@ -604,7 +631,7 @@ static void frame(void) {
     
     // Uniforms for fragment shader
     fs_params_t fs_params;
-    fs_params.u_wireframe = (mesh->wireframe) ? 1.0f : 0.0f;
+    fs_params.u_wireframe = (wireframe) ? 1.0f : 0.0f;
 
 
     // Check if user requested new model quality, if so recalculate
@@ -620,8 +647,13 @@ static void frame(void) {
     sg_apply_bindings(&state.bind);
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, SG_RANGE(vs_params));
     sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, SG_RANGE(fs_params));
-    sg_draw(0, mesh->indices.size(), 1);
-
+    
+    // Draw Triangles
+    unsigned long index_count = 0;
+    for (auto mesh : meshes) {
+        index_count += mesh.indices.size();
+    }
+    sg_draw(0, index_count, 1);
 
     // ***** Text
     fonsClearState(state.fons);    
@@ -641,8 +673,8 @@ static void frame(void) {
         fonsSetSpacing(fs, 0.0f); 
         fonsDrawText(fs, 10 * dpis,  20 * dpis, ("FPS: " +  std::to_string(fps)).c_str(), NULL);
         fonsDrawText(fs, 10 * dpis,  40 * dpis, ("Quality: " + std::to_string(mesh_quality+1)).c_str(), NULL);
-        fonsDrawText(fs, 10 * dpis,  60 * dpis, ("Triangles: " + std::to_string(mesh->indexCount() / 3)).c_str(), NULL);
-        fonsDrawText(fs, 10 * dpis,  80 * dpis, ("Depth: " + std::to_string(depth_multiplier)).c_str(), NULL);
+        fonsDrawText(fs, 10 * dpis,  60 * dpis, ("Triangles: " + std::to_string(triangles)).c_str(), NULL);
+        fonsDrawText(fs, 10 * dpis,  80 * dpis, ("Depth: " + std::to_string((int)(image_size * depth_multiplier))).c_str(), NULL);
         //fonsDrawText(fs, 10 * dpis, 100 * dpis, ("ZOOM: " + std::to_string(zoom)).c_str(), NULL);
 
         if (load_status != "") {

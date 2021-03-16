@@ -73,11 +73,8 @@ union Triangle {
 class DrMesh
 {    
 public:
-    std::vector<unsigned int>   indices;
-    std::vector<Vertex>         vertices;
-
-    bool                        wireframe = false;
-    float                       image_size = 0.0f;
+    std::vector<unsigned int>   indices     { };
+    std::vector<Vertex>         vertices    { };
 
 public:    
     // Constructor
@@ -88,9 +85,9 @@ public:
     int             vertexCount() const     { return vertices.size(); }
 
     // Creation Functions
-    void    initializeExtrudedImage(DrImage *image, int quality, float depth_multiplier);
-    void    initializeTextureCube();
-    void    initializeTextureQuad();
+    void    extrudeObjectFromPolygon(DrImage *image, int poly_number, int quality, float depth_multiplier);
+    void    initializeTextureCube(float size);
+    void    initializeTextureQuad(float size);
 
     // Optimize Mesh
     void    optimizeMesh();
@@ -104,7 +101,7 @@ public:
     // Extrusion Functions
     void    extrudeFacePolygon(const std::vector<DrPointF> &outline_points, int width, int height, int steps, bool reverse = false, float depth_multiplier = 1.f);
     void    triangulateFace(const std::vector<DrPointF> &outline_points, const std::vector<std::vector<DrPointF>> &hole_list,
-                            const DrBitmap &image, bool wireframe, Trianglulation type, double alpha_tolerance, float depth_multiplier);
+                            const DrBitmap &image, Trianglulation type, double alpha_tolerance, float depth_multiplier);
 
     // Assignment
     static  void set(Vertex &from_vertex, Vertex &to_vertex);    

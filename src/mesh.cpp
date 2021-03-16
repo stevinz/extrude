@@ -86,9 +86,9 @@ void DrMesh::set(Vertex &from_vertex, Vertex &to_vertex) {
 //####################################################################################
 //##    Builds a Textured Quad
 //####################################################################################
-void DrMesh::initializeTextureQuad() {
-    int   width =  image_size;
-    int   height = image_size;
+void DrMesh::initializeTextureQuad(float size) {
+    int   width =  size;
+    int   height = size;
     float w2 = width  / 2.f;
     float h2 = height / 2.f;
 
@@ -117,12 +117,12 @@ void DrMesh::initializeTextureQuad() {
 //####################################################################################
 //##    Builds a Textured Cube
 //####################################################################################
-void DrMesh::initializeTextureCube() {
-    int   width =  image_size;
-    int   height = image_size;
+void DrMesh::initializeTextureCube(float size) {
+    int   width =  size;
+    int   height = size;
     float w2 = width  / 2.f;
     float h2 = height / 2.f;
-    float depth = image_size * c_cube_depth;
+    float depth = size * c_cube_depth;
 
     // EXAMPLE: Adding Triangles
     float x1 = +w2, y1 = +h2;                   // Top Right
@@ -240,7 +240,7 @@ void DrMesh::triangle(float x1, float y1, float tx1, float ty1,
     DrVec3 n;
     n = DrVec3::triangleNormal(DrVec3(x1, y1, 0.f), DrVec3(x3, y3, 0.f), DrVec3(x2, y2, 0.f));
 
-    float depth = c_extrude_depth * image_size * depth_multiplier;;
+    float depth = c_extrude_depth * depth_multiplier;;
 
     add(DrVec3(x1, y1, +depth), n, DrVec2(tx1, ty1), Triangle_Point::Point1);
     add(DrVec3(x2, y2, +depth), n, DrVec2(tx2, ty2), Triangle_Point::Point2);
@@ -258,7 +258,7 @@ void DrMesh::triangle(float x1, float y1, float tx1, float ty1,
 //####################################################################################
 void DrMesh::extrude(float x1, float y1, float tx1, float ty1,
                      float x2, float y2, float tx2, float ty2, int steps, float depth_multiplier) {
-    float depth = c_extrude_depth * image_size * depth_multiplier;
+    float depth = c_extrude_depth * depth_multiplier;
 
     float step = (depth * 2.0f) / static_cast<float>(steps);
     float front = depth;

@@ -27,35 +27,30 @@
 //####################################################################################
 //##    Builds an Extruded DrImage Model
 //####################################################################################
-void DrMesh::initializeExtrudedImage(DrImage *image, int quality, float depth_multiplier) {
-
+void DrMesh::extrudeObjectFromPolygon(DrImage *image, int poly_number, int quality, float depth_multiplier) {
     int w = image->getBitmap().width;
     int h = image->getBitmap().height;
+    if (w < 1 || h < 1) return;
 
-    for (int poly_number = 0; poly_number < static_cast<int>(image->m_poly_list.size()); poly_number++) {
-        if (w < 1 || h < 1) continue;
+    // ***** Triangulate Concave Hull
+    std::vector<DrPointF>              &points =    image->m_poly_list[poly_number];
+    std::vector<std::vector<DrPointF>> &hole_list = image->m_hole_list[poly_number];
 
-        // ***** Triangulate Concave Hull
-        std::vector<DrPointF>              &points =    image->m_poly_list[poly_number];
-        std::vector<std::vector<DrPointF>> &hole_list = image->m_hole_list[poly_number];
+    // ***** Pick ONE of the following three
+    double alpha_tolerance = (image->m_outline_processed) ? c_alpha_tolerance : 0.0;
+    triangulateFace(points, hole_list, image->getBitmap(), Trianglulation::Triangulate_Opt, alpha_tolerance, depth_multiplier);
+    //triangulateFace(points, hole_list, image->getBitmap(), Trianglulation::Ear_Clipping, alpha_tolerance, depth_multiplier)
+    //triangulateFace(points, hole_list, image->getBitmap(), Trianglulation::Monotone, alpha_tolerance, depth_multiplier);
+    
+    // !!!!! #TODO: For greatly improved Trianglulation::Delaunay, break polygon into convex polygons before running algorithm
 
-        // ***** Pick ONE of the following three
-        double alpha_tolerance = (image->m_outline_processed) ? c_alpha_tolerance : 0.0;
-        triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Triangulate_Opt, alpha_tolerance, depth_multiplier);
-        //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Ear_Clipping, alpha_tolerance, depth_multiplier)
-        //triangulateFace(points, hole_list, image->getBitmap(), wireframe, Trianglulation::Monotone, alpha_tolerance, depth_multiplier);
-        
-        // !!!!! #TODO: For greatly improved Trianglulation::Delaunay, break polygon into convex polygons before running algorithm
-
-        // ***** Add extruded triangles from Hull and Holes
-        //int slices = wireframe ? 3 : 1;
-        int slices = (quality / 3) + 1;
-        extrudeFacePolygon(points, w, h, slices, false, depth_multiplier);
-        for (auto &hole : hole_list) {
-            extrudeFacePolygon(hole, w, h, slices, false, depth_multiplier);
-        }
+    // ***** Add extruded triangles from Hull and Holes
+    int slices = (quality / 3) + 1;
+    extrudeFacePolygon(points, w, h, slices, false, depth_multiplier);
+    for (auto &hole : hole_list) {
+        extrudeFacePolygon(hole, w, h, slices, false, depth_multiplier);
     }
-
+    
     // Optimize and smooth mesh
     optimizeMesh();
 
@@ -375,7 +370,7 @@ double averageTransparentPixels(const DrBitmap &bitmap, const DrPointF &at_point
 }
 
 void DrMesh::triangulateFace(const std::vector<DrPointF> &outline_points, const std::vector<std::vector<DrPointF>> &hole_list,
-                             const DrBitmap &image, bool wireframe, Trianglulation type, double alpha_tolerance, float depth_multiplier) {
+                             const DrBitmap &image, Trianglulation type, double alpha_tolerance, float depth_multiplier) {
     int width =  image.width;
     int height = image.height;
     double w2d = width  / 2.0;
