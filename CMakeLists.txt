@@ -25,10 +25,10 @@ project(extrude)
 
 # glob the files, add the executable
 file(GLOB SOURCE_CODE_FILES 
-    "demo/*.c**"
-    "demo/3rd_party/*.c**"
-    "demo/3rd_party/sokol/*.c**"
-    "demo/3rd_party/whereami/*.c**"
+    "example/*.c**"
+    "example/3rd_party/*.c**"
+    "example/3rd_party/sokol/*.c**"
+    "example/3rd_party/whereami/*.c**"
     "src/*.c**"
     "src/3rd_party/*.c**"
     "src/3rd_party/mesh_optimizer/*.c**"
@@ -60,7 +60,7 @@ endif()
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     message("Compiling shader")  
     execute_process (
-       COMMAND ./sokol-shdc -i shader.glsl -o demo/shader.glsl.h -l glsl330:glsl100:metal_macos:hlsl4
+       COMMAND ./sokol-shdc -i shader.glsl -o example/shader.glsl.h -l glsl330:glsl100:metal_macos:hlsl4
        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
