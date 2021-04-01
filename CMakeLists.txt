@@ -136,7 +136,7 @@ elseif (EXPORT_TARGET MATCHES "web")
 
 elseif (EXPORT_TARGET MATCHES "windows")
 
-    ### TODO ###
+    ### Don't need to do anything for MSVC... ###
 
 elseif (EXPORT_TARGET MATCHES "linux")
 
