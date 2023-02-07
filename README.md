@@ -1,8 +1,8 @@
 # Extrude
 
-Extrudes an image into a 3D model in C++ 11 with no external dependencies. Sample VS Code project that uses the single header file sokol libraries for rendering the extruded model.
+Extrudes an image into a 3D mesh in C++11 with no external dependencies. Sample VS Code project uses the sokol graphics library for rendering the extruded model.
 
-asm.js/wasm live demo: https://stevinz.github.io/extrude-html5/
+web assembly demo: https://stevinz.github.io/extrude-html5/
 
 ## Screenshots:
 

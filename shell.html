@@ -1,67 +1,76 @@
 <!doctype html>
 <html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>2D to 3D Extrusion</title>
-    <style>
-      /* Canvas MUST NOT have any border or padding, or mouse coords will be wrong */
-      #canvas {
-        display: block;
-        margin: 10px;
-        border: 0px none;
-        background-color: black;
-      }
+    <head>
+        <title>2D to 3D Extrusion</title>
+        <meta charset="utf-8">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <style>
+            #canvas {
+                display: block;
+                margin: 10px;
+                border: 0px none;
+                background-color: black;
+            }
 
-      #wrapper {
-        border: solid 2px black;
-        resize: both;
-        overflow: hidden;
-        margin: auto;
-        width:  660px;
-        height: 500px;
-        display: flex;
-        justify-content: center;
-      }
+            #wrapper {
+                border: solid 2px black;
+                resize: both;
+                overflow: hidden;
+                margin: auto;
+                width:  660px;
+                height: 500px;
+                display: flex;
+                justify-content: center;
+            }
 
-      #about {
-        display: block;
-        margin: auto;
-        border: 0px none;
-        width:  660px;
-        text-align: center;
-        justify-content: center;
-        background-color: transparent;
-      }
-    </style>
-  </head>
-  <body>
+            #about {
+                display: block;
+                margin: auto;
+                border: 0px none;
+                width:  660px;
+                text-align: center;
+                justify-content: center;
+                background-color: transparent;
+            }
+        </style>
+    </head>
+    <body>
 
     <div class="emscripten" id="wrapper">
-      <canvas width=640 height=480 class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+    <canvas width=640 height=480 class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
     </div>
 
     <div class="emscripten" id="about">
-      <br>
-      <b>Instructions</b><br>
-      Drag and drop image from below (or from desktop, *.png / *.bmp) onto canvas to generate 3D model. Images should be 32bit,
-      alpha channel is used for determining shape. Image size for this demo limited to a maximum height and width of 2048 pixels.
-      <br><br>
-      <b>Controls</b><br>
-      Press keys '1' (lowest) thru '9' (highest) to adjust number of triangles in model.<br>
-      Press 'w' key to toggle wireframe.<br>
-      Use mouse to rotate model, mouse wheel to zoom.<br>
-      <br>
+    <br>
+    <b>Instructions</b><br>
+    Drag and drop image from below (or from desktop, *.png / *.bmp) onto canvas to generate 3D model. Images should be 32bit,
+    alpha channel is used for determining shape. Image size for this demo limited to a maximum height and width of 2048 pixels.
+    <br><br>
+    <b>Controls</b><br>
+    Press keys '1' (lowest) thru '9' (highest) to adjust number of triangles in model.<br>
+    Press 'w' key to toggle wireframe.<br>
+    Use mouse to rotate model, mouse wheel to zoom.<br>
+    <br>
     </div>
 
     <br>
+
     <div class="emscripten" id="about">
-      <a href="assets/blob.png"><img draggable="true" src="assets/blob.png" height=128 width=128></a>
-      <a href="assets/shapes.png"><img draggable="true" src="assets/shapes.png" height=128 width=128></a>
-      <a href="assets/craft.png"><img draggable="true" src="assets/craft.png" height=128 width=128></a>
+        <a href="assets/blob.png"><img id="Blob" draggable="true" src="assets/blob.png" height=128 width=128></a>
+        <a href="assets/shapes.png"><img id="Shapes" draggable="true" src="assets/shapes.png" height=128 width=128></a>
+        <a href="assets/craft.png"><img id="Craft" draggable="true" src="assets/craft.png" height=128 width=128></a>
     </div>
 
     <script type='text/javascript'>
+
+        const blob = document.getElementById("Blob");
+        const shapes = document.getElementById("Shapes");
+        const craft = document.getElementById("Craft");
+
+        blob.addEventListener("dragstart", (event) => {
+
+        });
+
         var Module = {
             canvas: (function() {
                 var canvas = document.getElementById('canvas');
@@ -70,24 +79,25 @@
                 let width;
                 let height;
                 setInterval(() => {
-                  const newWidth = canvasWrapper.clientWidth;
-                  const newHeight = canvasWrapper.clientHeight;
-                  if ((width != newWidth - border_width) || (height != newHeight - border_width)) {
-                    width  = newWidth - border_width;
-                    height = newHeight - border_width;
-                    canvas.width = width;
-                    canvas.height = height;
-                    window.dispatchEvent(new Event('resize'));
-                  }
+                    const newWidth = canvasWrapper.clientWidth;
+                    const newHeight = canvasWrapper.clientHeight;
+                    if ((width != newWidth - border_width) || (height != newHeight - border_width)) {
+                        width  = newWidth - border_width;
+                        height = newHeight - border_width;
+                        canvas.width = width;
+                        canvas.height = height;
+                        window.dispatchEvent(new Event('resize'));
+                    }
                 }, 100)
 
-                // As a default initial behavior, pop up an alert when webgl context is lost. To make your
-                // application robust, you may want to override this behavior before shipping!
-                // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
-                canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+                canvas.addEventListener("webglcontextlost", (event) => {
+                    event.preventDefault();
+                    alert('WebGL context lost. You will need to reload the page.');
+                });
                 return canvas;
             })()
         };
+
     </script>
 
     {{{ SCRIPT }}}
